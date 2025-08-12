@@ -281,4 +281,6 @@ tags
 .history
 .ionide
 
+venv
+
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,pycharm+iml,pycharm+all,visualstudiocode,vim,nanoc
