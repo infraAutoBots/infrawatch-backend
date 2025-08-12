@@ -13,6 +13,7 @@ from models import MonitorConfig, MonitorStatus, UptimeData
 from database import init_db, add_monitor, get_monitor, update_monitor, delete_monitor, get_all_monitors, get_uptime_data
 from monitor import start_monitoring_loop
 
+
 app = FastAPI()
 
 # Dicionário para tarefas de background (uma por IP)

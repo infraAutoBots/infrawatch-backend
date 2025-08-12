@@ -2,7 +2,8 @@
 # - Personaliza mensagem: Envia dict com message, services, snmp_data.
 
 import aiohttp
-from typing import Dict, Optional
+from typing import Dict
+
 
 async def send_webhook(url: str, payload: Dict):
     async with aiohttp.ClientSession() as session:
@@ -11,4 +12,3 @@ async def send_webhook(url: str, payload: Dict):
                 pass  # Ignora resposta, ou logue
         except Exception:
             pass  # Handle error se necessário
-

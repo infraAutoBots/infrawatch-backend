@@ -31,5 +31,3 @@ class UptimeData(BaseModel):
     uptime_seconds: float
     downtime_seconds: float
     history: List[Dict]
-
-

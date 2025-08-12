@@ -2,11 +2,15 @@
 # - Usa aiohttp para HTTP/HTTPS/WebSocket, asyncio para TCP/UDP, etc.
 # - Para cada serviço, tenta uma conexão rápida (timeout 2s).
 # - Retorna lista de serviços disponíveis.
-# - Serviços: CoAP (UDP 5683), Telnet (TCP 23), Modbus (TCP 502), HTTP (TCP 80), HTTPS (TCP 443), SMTP (TCP 25), POP3 (TCP 110), IMAP (TCP 143), FTP (TCP 21), SFTP (TCP 22, mas SSH), DNS (UDP 53), TCP/UDP genérico (porta custom? assumimos padrões), WebSocket (ws://ip), SSH (TCP 22), MQTT (TCP 1883).
+# - Serviços: CoAP (UDP 5683), Telnet (TCP 23), Modbus (TCP 502), HTTP (TCP 80),
+#     HTTPS (TCP 443), SMTP (TCP 25), POP3 (TCP 110), IMAP (TCP 143), FTP (TCP 21),
+#     SFTP (TCP 22, mas SSH), DNS (UDP 53), TCP/UDP genérico (porta custom? assumimos padrões),
+#     WebSocket (ws://ip), SSH (TCP 22), MQTT (TCP 1883).
 
 import asyncio
 import aiohttp
 from typing import List
+
 
 SERVICES_PORTS = {
     "CoAP": ("udp", 5683),

@@ -8,6 +8,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Dict, Optional
 
+
 DB_FILE = "monitors.db"
 
 
