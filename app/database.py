@@ -1,5 +1,3 @@
-
-# 2. database.py
 # - Usa aiosqlite para operações assíncronas no SQLite.
 # - Tabelas: monitors (IPs e configs), status_logs (histórico de status para uptime), services (serviços confirmados por IP).
 # - Funções: add, get, update, delete, log_status, get_uptime_data (calcula tempo ativo/inativo baseado em logs).

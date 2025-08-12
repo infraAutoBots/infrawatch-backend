@@ -1,5 +1,3 @@
-
-# 5. services.py
 # - Funções assíncronas para verificar serviços.
 # - Usa aiohttp para HTTP/HTTPS/WebSocket, asyncio para TCP/UDP, etc.
 # - Para cada serviço, tenta uma conexão rápida (timeout 2s).

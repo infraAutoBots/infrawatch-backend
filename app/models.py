@@ -1,5 +1,3 @@
-
-# 3. models.py
 # - Modelos Pydantic para validação de inputs/outputs.
 # - MonitorConfig: IP, intervalo, SNMP version, community/user/auth, webhook_url, etc.
 # - MonitorStatus: Status atual.

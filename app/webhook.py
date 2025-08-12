@@ -1,5 +1,3 @@
-
-# 7. webhook.py
 # - Envia POST assíncrono com aiohttp para o webhook_url.
 # - Personaliza mensagem: Envia dict com message, services, snmp_data.
 

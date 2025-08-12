@@ -1,5 +1,3 @@
-
-# 6. snmp_monitor.py
 # - Usa pysnmp com asyncio para get async de OIDs.
 # - OIDs exemplos: Genéricos (sysUpTime .1.3.6.1.2.1.1.3.0), CPU para Cisco (.1.3.6.1.4.1.9.9.109.1.1.1.1.5), Mikrotik (.1.3.6.1.4.1.14988.1.1.3.10.0), tráfego (ifInOctets .1.3.6.1.2.1.2.2.1.10), temperatura (ex: para Cisco .1.3.6.1.4.1.9.9.13.1.3.1.3), status portas (ifOperStatus .1.3.6.1.2.1.2.2.1.8).
 # - Suporta v1, v2c, v3.

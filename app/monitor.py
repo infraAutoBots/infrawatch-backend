@@ -1,4 +1,3 @@
-# 4. monitor.py
 # - Lógica principal do loop de monitoramento assíncrono.
 # - Para cada IP: Loop infinito com sleep(interval).
 # - Primeiro tenta ping; se falhar, verifica serviços confirmados.
@@ -12,7 +11,7 @@ from icmplib import async_ping
 from services import check_services
 from snmp_monitor import get_snmp_data
 from webhook import send_webhook
-from app.database import log_status, get_confirmed_services, update_confirmed_services
+from database import log_status, get_confirmed_services, update_confirmed_services
 from typing import Dict
 
 

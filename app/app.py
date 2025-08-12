@@ -1,4 +1,3 @@
-# 1. app.py
 # - Este é o arquivo principal que inicia a API FastAPI.
 # - Define endpoints para adicionar/modificar/listar/remover monitors.
 # - Gerencia um dicionário de tarefas asyncio para cada IP (loop de monitoramento em background).
@@ -8,12 +7,10 @@
 
 import asyncio
 from fastapi import FastAPI, HTTPException, Body
-from pydantic import BaseModel
 import uvicorn
-from typing import Dict, Optional
+from typing import Dict
 from models import MonitorConfig, MonitorStatus, UptimeData
-from database import init_db, add_monitor, get_monitor, update_monitor, delete_monitor, get_all_monitors, log_status, \
-    get_uptime_data
+from database import init_db, add_monitor, get_monitor, update_monitor, delete_monitor, get_all_monitors, log_status, get_uptime_data
 from monitor import start_monitoring_loop
 
 app = FastAPI()
