@@ -282,6 +282,9 @@ tags
 .ionide
 
 venv
+venvl
+venvw
 __pycache__
+ZotherTests
 tmp.json
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,pycharm+iml,pycharm+all,visualstudiocode,vim,nanoc
