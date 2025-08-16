@@ -285,7 +285,6 @@ venv
 venvl
 venvw
 __pycache__
-ZotherTest
-ZotherTest/**
+
 tmp.json
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,pycharm+iml,pycharm+all,visualstudiocode,vim,nanoc
