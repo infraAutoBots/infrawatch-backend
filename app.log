@@ -1,0 +1,6 @@
+2025-08-18 12:24:51,129 [INFO] Consulta de status realizada
+2025-08-18 12:30:23,662 [INFO] SNMP atualizado para 192.168.8.121: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 12:30:26,325 [INFO] SNMP atualizado para 127.0.0.1: {'sysDescr': 'Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686', 'cpu': '', 'disk': '', 'uptime': '42009', 'storage': ''}
+2025-08-18 12:30:26,325 [INFO] Consulta de status realizada
+2025-08-18 12:37:07,909 [INFO] SNMP atualizado para 192.168.8.121: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 12:37:09,094 [INFO] SNMP atualizado para 127.0.0.1: {'sysDescr': 'Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686', 'cpu': '', 'disk': '', 'uptime': '82327', 'storage': ''}

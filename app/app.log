@@ -1,0 +1,11 @@
+2025-08-18 11:39:41,400 [INFO] SNMP atualizado para 192.168.8.121: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 11:42:27,221 [INFO] SNMP atualizado para 127.0.0.1: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 11:42:27,221 [INFO] Consulta de status realizada
+2025-08-18 11:49:16,671 [INFO] SNMP atualizado para 192.168.8.121: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 11:52:04,682 [INFO] SNMP atualizado para 127.0.0.1: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 11:58:50,503 [INFO] SNMP atualizado para 192.168.8.121: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 12:01:38,821 [INFO] SNMP atualizado para 127.0.0.1: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 12:08:23,918 [INFO] SNMP atualizado para 192.168.8.121: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 12:11:13,897 [INFO] SNMP atualizado para 127.0.0.1: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 12:17:56,583 [INFO] SNMP atualizado para 192.168.8.121: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
+2025-08-18 12:20:41,442 [INFO] SNMP atualizado para 127.0.0.1: {'sysDescr': None, 'cpu': None, 'disk': None, 'uptime': None, 'storage': None}
