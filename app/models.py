@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base
 
 
 # criar a conexao no banco
-db = create_engine('sqlite:///database.db')
+db = create_engine('sqlite:///../database.db')
 
 # criar a base do banco de dados
 Base = declarative_base()
@@ -23,7 +23,7 @@ class Users(Base):
     name = Column("name", String)
     email = Column("email", String)
     password = Column("password", String)
-    state = Column("state", String)
+    state = Column("state", Boolean)
     last_login = Column("last_login", DateTime)
     access_level = Column("access_level", String) # ChoiceType(choices=ACCESS_LEVEL)
 

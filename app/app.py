@@ -1,7 +1,6 @@
 import os
 import uvicorn
-# from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 
 app = FastAPI()
 
