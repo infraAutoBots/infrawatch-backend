@@ -1,10 +1,12 @@
+import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base
 
 
 
 # criar a conexao no banco
-db = create_engine('sqlite:///../database.db')
+filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database.db'))
+db = create_engine(f'sqlite:///{filename}')
 
 # criar a base do banco de dados
 Base = declarative_base()
