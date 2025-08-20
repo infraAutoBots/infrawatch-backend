@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from dependencies import init_session
+from dependencies import init_session, verify_token
 from sqlalchemy.orm import Session
-from models import Devices, DeviceData
+from models import Users, Devices, DeviceData
 from schemas import DeviceSchemas, DeviceDataSchemas
 
 
@@ -10,7 +10,7 @@ monitor_router = APIRouter(prefix="/monitor", tags=["monitor"])
 
 # token jwt
 @monitor_router.post("/")
-async def add_ip(device_schemas: DeviceSchemas, session: Session = Depends(init_session)):
+async def add_ip(device_schemas: DeviceSchemas, user: Users = Depends(verify_token), session: Session = Depends(init_session)):
     """Adicione um endereço Ip/Domínio à lista de monitoramento.
 
     Args:
