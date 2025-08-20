@@ -9,17 +9,28 @@ from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordRequestForm
 
 
+
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def create_token(id_user: int, timeout=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)):
+    """_summary_
+
+    Args:
+        id_user (int): _description_
+        timeout (_type_, optional): _description_. Defaults to timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES).
+
+    Returns:
+        _type_: _description_
+    """
+
     expiration_date = datetime.now(timezone.utc) + timeout
     info = {"sub": str(id_user), "exp": expiration_date}
     token = jwt.encode(info, SECRET_KEY, ALGORITHM)
     return token
 
 
-@auth_router.post("/login") # entrar login
+@auth_router.post("/login") # fazer login
 async def login(login_schemas:LoginSchemas, session: Session = Depends(init_session)):
     """Login a user.
 
@@ -29,7 +40,6 @@ async def login(login_schemas:LoginSchemas, session: Session = Depends(init_sess
     Returns:
         dict: A message indicating the login status and the provided credentials.
     """
-
 
     user = session.query(Users).filter(Users.email == login_schemas.email).first()
     if not user:
@@ -44,7 +54,7 @@ async def login(login_schemas:LoginSchemas, session: Session = Depends(init_sess
             }
 
 
-@auth_router.post("/login-form") # entrar login
+@auth_router.post("/login-form") # fazer login via formulario
 async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(init_session)):
     """Login a user.
 
@@ -68,8 +78,7 @@ async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: 
             }
 
 
-# criar conta, add para criar conta tem que ser admin
-@auth_router.post("/signup")
+@auth_router.post("/signup") # criar conta, add para criar conta tem que ser admin
 async def signup(user_schemas: UserSchemas = Depends(verify_token), session: Session = Depends(init_session)):
     """_summary_
 

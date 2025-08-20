@@ -8,6 +8,12 @@ from encryption import SECRET_KEY, ALGORITHM, oauth2_schema
 
 
 def init_session():
+    """_summary_
+
+    Yields:
+        _type_: _description_
+    """
+
     try:
         Session = sessionmaker(bind=db)
         session = Session()
@@ -17,6 +23,19 @@ def init_session():
 
 
 def verify_token(token: str = Depends(oauth2_schema), session: Session =  Depends(init_session)):
+    """_summary_
+
+    Args:
+        token (str, optional): _description_. Defaults to Depends(oauth2_schema).
+        session (Session, optional): _description_. Defaults to Depends(init_session).
+
+    Raises:
+        HTTPException: _description_
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
 
     try:
         info = jwt.decode(token, SECRET_KEY, ALGORITHM)

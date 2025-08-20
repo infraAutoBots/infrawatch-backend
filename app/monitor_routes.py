@@ -20,7 +20,6 @@ async def add_ip(device_schemas: DeviceSchemas, user: Users = Depends(verify_tok
         dict: Uma mensagem indicando o resultado da operação.
     """
 
-
     # verificar se esta logado X
     # fazer a validacao de device valido X
     # verificar se quem esta a add e um admin X
@@ -66,7 +65,6 @@ async def update_ip_info(ip: str):
         dict: Uma mensagem indicando o resultado da operação.
     """
 
-
     # verificar se esta logado
     # verificar se o usuario e admin
     # validar as alteracoes
@@ -100,7 +98,6 @@ async def get_status():
     Returns:
         dict: O status do serviço.
     """
-    
 
     # verificar se esta logado
     #qualque um pode fazer isso

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 
 
+
 # Carrega configurações do .env
 load_dotenv()
 
@@ -20,6 +21,7 @@ async def check_tcp(ip: str, timeout: float = float(os.getenv("TCP_TIMEOUT", 3))
     Verifica se uma conexão TCP pode ser estabelecida com o IP e porta especificados.
     80 (HTTP), 443 (HTTPS), 3306 (MySQL), 5432 (PostgreSQL), 53 (DNS), 161 (SNMP)
     """
+
     try:
         ip_address(ip)
     except ValueError:
