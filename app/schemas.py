@@ -1,3 +1,5 @@
+import email
+from click import password_option
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -26,7 +28,6 @@ class DeviceSchemas(BaseModel):
     user: str
     authKey: str
     privKey: str
-    id_user: int
 
     class Config:
         from_attributes = True
@@ -41,6 +42,13 @@ class DeviceDataSchemas(BaseModel):
     uptime: Optional[str]
     storage: Optional[str]
     last_updated: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+class LoginSchemas(BaseModel):
+    email: str
+    password: str
 
     class Config:
         from_attributes = True
