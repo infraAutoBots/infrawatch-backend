@@ -38,7 +38,7 @@ async def add_ip(device_schemas: DeviceSchemas, user: Users = Depends(verify_tok
 
 
 @monitor_router.get("/{ip}")
-async def get_ip_info(ip: str):
+async def get_ip_info(ip: str, user: Users = Depends(verify_token)):
     """Obtenha informações sobre um endereço IP específico.
 
     Args:

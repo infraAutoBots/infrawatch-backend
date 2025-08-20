@@ -47,9 +47,11 @@ async def login(login_schemas:LoginSchemas, session: Session = Depends(init_sess
     elif not bcrypt_context.verify(login_schemas.password, user.password):
         raise HTTPException(status_code=400, detail="Invalid password")
     else:
-        access_token = create_token(user.id, timeout=timedelta(days=30))
+        access_token = create_token(user.id)
+        refresh_token = create_token(user.id, timeout=timedelta(days=7))
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "Bearer"
             }
 
@@ -79,7 +81,7 @@ async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: 
 
 
 @auth_router.post("/signup") # criar conta, add para criar conta tem que ser admin
-async def signup(user_schemas: UserSchemas = Depends(verify_token), session: Session = Depends(init_session)):
+async def signup(user_schemas: UserSchemas, session: Session = Depends(init_session)):
     """_summary_
 
     Args:
@@ -108,4 +110,10 @@ async def signup(user_schemas: UserSchemas = Depends(verify_token), session: Ses
                          user_schemas.last_login, user_schemas.access_level)
         session.add(new_user)
         session.commit()
-        return {"msg" : "user add"}
+        return {"msg" : f"user {new_user.name} add"}
+
+
+@auth_router.get("/refresh")
+async def refresh_token(user: Users = Depends(verify_token)):
+    access_token = create_token(user.id)
+    return {"access_token": access_token, "token_type": "Bearer"}

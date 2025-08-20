@@ -1,5 +1,3 @@
-import email
-from click import password_option
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
