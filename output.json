@@ -164,30 +164,3 @@
     "uptime":"42009",
     "storage":""},
     "last_updated":"2025-08-18T11:30:26.325523"}
-
- sqlcode
- CREATE TABLE devices (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ip VARCHAR(45) NOT NULL UNIQUE,
-    version VARCHAR(10),
-    community VARCHAR(50),
-    port INT,
-    user VARCHAR(50),
-    auth_key VARCHAR(255),
-    priv_key VARCHAR(255)
-);
-
-CREATE TABLE device_data (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    device_id INT NOT NULL,
-    status BOOLEAN NOT NULL,
-    sys_descr TEXT,
-    cpu VARCHAR(100),
-    disk VARCHAR(100),
-    uptime VARCHAR(50),
-    storage VARCHAR(100),
-    last_updated DATETIME NOT NULL,
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
-    INDEX idx_device_id (device_id),
-    INDEX idx_last_updated (last_updated)
-);
