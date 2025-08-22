@@ -50,9 +50,10 @@ class Devices(Base):
     user = Column("user", String)
     authKey = Column("authKey", String)
     privKey = Column("privKey", String)
+    webhook = Column("webhook", String)
     id_user = Column("id_usuario", Integer, ForeignKey('users.id'))
 
-    def __init__(self, ip, interval, version, community, port, user, authKey, privKey, id_user):
+    def __init__(self, ip, interval, version, community, port, user, authKey, privKey, webhook, id_user):
         self.ip = ip
         self.interval = interval
         self.version = version
@@ -61,6 +62,7 @@ class Devices(Base):
         self.user = user
         self.authKey = authKey
         self.privKey = privKey
+        self.webhook = webhook
         self.id_user = id_user
 
 
