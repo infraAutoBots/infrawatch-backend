@@ -1,8 +1,8 @@
-"""Status bool
+"""initial
 
-Revision ID: 82982ebab57b
+Revision ID: 7b1452ffbf40
 Revises: 
-Create Date: 2025-08-19 09:20:53.794586
+Create Date: 2025-08-22 11:01:08.707746
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '82982ebab57b'
+revision: str = '7b1452ffbf40'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -41,6 +41,7 @@ def upgrade() -> None:
     sa.Column('user', sa.String(), nullable=True),
     sa.Column('authKey', sa.String(), nullable=True),
     sa.Column('privKey', sa.String(), nullable=True),
+    sa.Column('webhook', sa.Boolean(), nullable=True),
     sa.Column('id_usuario', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['id_usuario'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')

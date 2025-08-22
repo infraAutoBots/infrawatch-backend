@@ -47,12 +47,14 @@
         "last_updated":"2025-08-18T11:27:37.703121"},
     "192.168.8.121":{
         "status":true,
+        "snmp": true,
         "data":{
             "sysDescr":null,
             "cpu":null,
             "disk":null,
             "uptime":null,
             "storage":null},
+        "webhook": true,
         "last_updated":"2025-08-18T11:30:23.662497"},
     "127.0.0.1":{
         "status":true,
@@ -66,72 +68,6 @@
 }
 
 
-# community estiver vazio o e porque a versao do SNMP e 3
-# Para usar a versao 3, e necessario fornecer as informacoes 
-# de usuario e as chaves de autenticacao e privacidade se houver
-# se for versão 3 nem sempre e autenticada
-# a baixo estão as configurações da versão 3
-
-1. {
-    "ip": "192.168.8.159",
-    "version": "3",
-    "community": "",
-    "port": 161,
-    "user": "admin",
-    "authKey": "authKey",
-    "privKey": "privKey"
-}
-2. {
-    "ip": "192.168.8.159",
-    "version": "3",
-    "community": "",
-    "port": 161,
-    "user": "admin",
-    "authKey": "authKey",
-    "privKey": ""
-}
-3. {
-    "ip": "192.168.8.159",
-    "version": "3",
-    "community": "",
-    "port": 161,
-    "user": "admin",
-    "authKey": "",
-    "privKey": ""
-}
-4. {
-    "ip": "192.168.8.159",
-    "version": "3",
-    "community": "",
-    "port": 161,
-    "user": "",
-    "authKey": "",
-    "privKey": ""
-}
-
-
-# por padrão, a versão 2c é usada e a passagem de parâmetros é feita através
-{
-    "ip": "192.168.8.159",
-    "Interval": 30,
-    "version": "2c",
-    "community": "public",
-    "port": 161,
-    "user": "",
-    "authKey": "",
-    "privKey": ""
-}
-
-# versão 1
-{
-    "ip": "192.168.8.159",
-    "version": "1",
-    "community": "public",
-    "port": 161,
-    "user": "",
-    "authKey": "",
-    "privKey": ""
-}
 
 # USUARIO
 {
@@ -151,7 +87,32 @@
   "port": 161,
   "user": "admin",
   "authKey": "authKey",
-  "privKey": "privKey"
+  "privKey": "privKey",
+  "webhook": true
+}
+
+# DEVICE so check sem snmp
+{
+  "ip": "192.168.8.159",
+  "version": "",
+  "community": "",
+  "port": ,
+  "user": "",
+  "authKey": "",
+  "privKey": "",
+  "webhook": false
+}
+
+# Device com SNMP
+{
+  "ip": "192.168.8.159",
+  "version": "2c",
+  "community": "public",
+  "port": 161,
+  "user": "admin",
+  "authKey": "authKey",
+  "privKey": "privKey",
+  "webhook": true
 }
 
 # device data
@@ -164,3 +125,25 @@
     "uptime":"42009",
     "storage":""},
     "last_updated":"2025-08-18T11:30:26.325523"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"192.168.8.121": {"status": true,
+    "snmp": true,
+    "data": {"sysDescr":null,"cpu":null,"disk":null,"uptime":null,"storage":null},
+    "webhook": true,
+    "last_updated":"2025-08-18T11:30:23.662497"},
+
+    "webhook": true,
+    "last_updated":"2025-08-18T11:30:23.662497"},
