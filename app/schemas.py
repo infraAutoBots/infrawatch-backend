@@ -22,10 +22,11 @@ class DeviceSchemas(BaseModel):
     interval: int
     version: str
     community: str
-    port: int
+    port: Optional[int] | None
     user: str
     authKey: str
     privKey: str
+    webhook: str
 
     class Config:
         from_attributes = True
