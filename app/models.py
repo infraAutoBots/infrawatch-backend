@@ -1,6 +1,6 @@
 import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 
 
 
@@ -52,6 +52,7 @@ class Devices(Base):
     privKey = Column("privKey", String)
     webhook = Column("webhook", String)
     id_user = Column("id_usuario", Integer, ForeignKey('users.id'))
+    device_data = relationship("DeviceData", back_populates="device", cascade="all, delete", passive_deletes=True)
 
     def __init__(self, ip, interval, version, community, port, user, authKey, privKey, webhook, id_user):
         self.ip = ip
@@ -70,7 +71,7 @@ class DeviceData(Base):
     __tablename__ = 'device_data'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
-    id_device = Column("id_device", Integer, ForeignKey('devices.id'))
+    id_device = Column("id_device", Integer, ForeignKey('devices.id'), ondelete="CASCADE")
     status = Column("status", Boolean)
     sys_descr = Column("sys_descr", Text)
     cpu = Column("cpu", String)
@@ -78,6 +79,7 @@ class DeviceData(Base):
     uptime = Column("uptime", String)
     storage = Column("storage", String)
     last_updated = Column("last_updated", DateTime)
+    device = relationship("Devices", back_populates="device_data")
 
     def __init__(self, id_device, status, sys_descr, cpu, disk, uptime, storage, last_updated):
         self.id_device = id_device
