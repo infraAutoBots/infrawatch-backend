@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from dependencies import init_session, verify_token
 from sqlalchemy.orm import Session
 from models import Users, Devices, DeviceData
-from schemas import DeviceSchemas, DeviceDataSchemas
+from schemas import DeviceSchemas, ResponseDeviceDataSchemas
 from utils import valid_device
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 monitor_router = APIRouter(prefix="/monitor", tags=["monitor"], dependencies=[Depends(verify_token)])
@@ -36,10 +36,30 @@ async def add_ip(device_schemas: DeviceSchemas, logged_user: Users = Depends(ver
                          device_schemas.privKey, device_schemas.webhook, logged_user.id)
         session.add(new_device)
         session.commit()
-        return {"message": f" {device_schemas.ip} adicionado à lista de monitoramento"}
+        return {"message": f"Endereço IP {device_schemas.ip} adicionado à lista de monitoramento"}
 
 
-@monitor_router.get("/{ip}")
+@monitor_router.get("/status")
+async def get_status(session: Session = Depends(init_session)):
+    """Obtenha o status de todos os dispositivos monitorados.
+
+    Args:
+        session (Session, optional): _description_. Defaults to Depends(init_session).
+
+    Returns:
+        dict: O status do serviço.
+    """
+
+    list_data: Dict[str, Any] = []
+    all_data = session.query(Devices).all()
+    for data in all_data:
+        device_data = session.query(DeviceData).filter(DeviceData.id_device == data.id).all()
+        list_data.append({"device": data.ip, "data": device_data})
+
+    return {"data": list_data}
+
+
+@monitor_router.get("/{ip}", response_model=Optional[ResponseDeviceDataSchemas])
 async def get_ip_info(ip: str, logged_user: Users = Depends(verify_token), session: Session = Depends(init_session)):
     """Obtenha informações sobre um endereço IP específico.
 
@@ -59,7 +79,8 @@ async def get_ip_info(ip: str, logged_user: Users = Depends(verify_token), sessi
     else:
         last_data = (session.query(DeviceData).filter(DeviceData.id_device == device.id)
             .order_by(DeviceData.id.desc()).first())
-        return {"ip": ip, "data": last_data}
+        # return {"ip": ip, "data": last_data}
+        return last_data
 
 
 @monitor_router.put("/")
@@ -92,7 +113,7 @@ async def update_ip_info(device_schemas: DeviceSchemas, logged_user: Users = Dep
         ip.privKey = device_schemas.privKey
         ip.webhook = device_schemas.webhook
         session.commit()
-        return {"message": f"Endereço IP {ip} atualizado na lista de monitoramento."}
+        return {"message": f"Endereço IP {ip.ip} atualizado na lista de monitoramento."}
 
 
 @monitor_router.delete("/{ip}")
@@ -106,33 +127,13 @@ async def delete_ip(ip: str, logged_user: Users = Depends(verify_token), session
         dict: Uma mensagem indicando o resultado da operação.
     """
 
-    # verifcar utilizar o conseito de ship que apaga todos os dados relacionados com este ip/domini
-    # if logged_user.access_level != "ADMIN":
-    #     raise HTTPException(status_code=403, detail="Operation not permitted")
-    # # verificar se ele e admin e se o end point existe
-    # ip = session.query(Devices).filter(Devices.ip == ip).first()
-    # if not ip:
-    #     raise HTTPException(status_code=404, detail="IP/Domain not found")
-
-    # session.delete(ip)
-    # session.commit()
+    if logged_user.access_level != "ADMIN":
+        raise HTTPException(status_code=403, detail="Operation not permitted")
+    ip = session.query(Devices).filter(Devices.ip == ip).first()
+    if not ip:
+        raise HTTPException(status_code=404, detail="IP/Domain not found")
+    session.delete(ip)
+    session.commit()
     return {"message": f"Endereço IP {ip} removido da lista de monitoramento."}
 
-
-@monitor_router.get("/status")
-async def get_status(session: Session = Depends(init_session)):
-    """Obtenha o status do serviço de monitoramento.
-
-    Returns:
-        dict: O status do serviço.
-    """
-
-    # verificar se esta logado
-    list_data: Dict[str, Any] = []
-    all_data = session.query(Devices).all()
-    for data in all_data:
-        device_data = session.query(DeviceData).filter(DeviceData.id_device == data.id).all()
-        list_data.append({"device": data, "data": device_data})
-
-    return {"data": list_data}
 
