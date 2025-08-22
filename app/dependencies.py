@@ -1,5 +1,4 @@
-from models import db
-from models import Users
+from models import db, Users
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import sessionmaker, Session
 from jose import jwt, JWTError
@@ -37,6 +36,7 @@ def verify_token(token: str = Depends(oauth2_schema), session: Session =  Depend
         _type_: _description_
     """
 
+    # add a verificacao da chave se e access ou refresh
     try:
         info = jwt.decode(token, SECRET_KEY, ALGORITHM)
         id_user = info.get('sub')
