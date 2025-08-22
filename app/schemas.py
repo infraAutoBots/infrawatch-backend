@@ -51,3 +51,15 @@ class LoginSchemas(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ResponseDeviceDataSchemas(BaseModel):
+    status: bool
+    sys_descr: Optional[str]
+    cpu: Optional[str]
+    disk: Optional[str]
+    uptime: Optional[str]
+    storage: Optional[str]
+    last_updated: Optional[datetime]
+
+    class Config:
+        from_attributes = True
