@@ -14,14 +14,14 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def create_token(id_user: int, timeout=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)):
-    """_summary_
+    """Cria um token JWT para um usuário.
 
     Args:
-        id_user (int): _description_
-        timeout (_type_, optional): _description_. Defaults to timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES).
+        id_user (int): O ID do usuário.
+        timeout (timedelta, optional): O tempo de expiração do token. Defaults to timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES).
 
     Returns:
-        _type_: _description_
+        str: O token JWT codificado.
     """
 
     expiration_date = datetime.now(timezone.utc) + timeout
@@ -32,13 +32,13 @@ def create_token(id_user: int, timeout=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MIN
 
 @auth_router.post("/login") # fazer login
 async def login(login_schemas:LoginSchemas, session: Session = Depends(init_session)):
-    """Login a user.
+    """Realiza o login de um usuário.
 
     Args:
-        credentials (dict): The login credentials containing username and password.
+        credentials (dict): As credenciais de login contendo e-mail e senha.
 
     Returns:
-        dict: A message indicating the login status and the provided credentials.
+        dict: A mensagem indicando o status do login e as credenciais fornecidas.
     """
 
     user = session.query(Users).filter(Users.email == login_schemas.email).first()
