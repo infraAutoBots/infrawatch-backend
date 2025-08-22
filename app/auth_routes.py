@@ -81,7 +81,7 @@ async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: 
 
 
 @auth_router.post("/signup") # criar conta, add para criar conta tem que ser admin
-async def signup(user_schemas: UserSchemas, session: Session = Depends(init_session)):
+async def signup(user_schemas: UserSchemas, logged_user: Users = Depends(verify_token), session: Session = Depends(init_session)):
     """_summary_
 
     Args:
@@ -96,13 +96,14 @@ async def signup(user_schemas: UserSchemas, session: Session = Depends(init_sess
         _type_: _description_
     """
 
+    if logged_user.access_level != 'ADMIN':
+        raise HTTPException(status_code=403, detail="Operation not permitted")
+
     user = session.query(Users).filter(Users.email == user_schemas.email).first()
     if user_schemas.access_level not in ['ADMIN', 'MONITOR', 'VIEWER']:
         raise HTTPException(status_code=400, detail="Invalid access level")
     elif user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    elif user.access_level != 'ADMIN':
-        raise HTTPException(status_code=401, detail="Access denied")
     else:
         encrypted_password = bcrypt_context.hash(user_schemas.password)
         new_user = Users(user_schemas.name, user_schemas.email,
@@ -110,7 +111,7 @@ async def signup(user_schemas: UserSchemas, session: Session = Depends(init_sess
                          user_schemas.last_login, user_schemas.access_level)
         session.add(new_user)
         session.commit()
-        return {"msg" : f"user {new_user.name} add"}
+        return {"msg" : f"{new_user.name} cadastrado com sucesso"}
 
 
 @auth_router.get("/refresh")
