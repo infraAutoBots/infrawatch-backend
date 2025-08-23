@@ -16,7 +16,7 @@ class UserSchemas(BaseModel):
         from_attributes = True
 
 
-class DeviceSchemas(BaseModel):
+class EndPointSchemas(BaseModel):
 
     ip: str
     interval: int
@@ -32,8 +32,8 @@ class DeviceSchemas(BaseModel):
         from_attributes = True
 
 
-class DeviceDataSchemas(BaseModel):
-    id_device: int
+class EndPointsDataSchemas(BaseModel):
+    id_end_point: int
     status: bool
     sys_descr: Optional[str]
     cpu: Optional[str]
@@ -52,7 +52,7 @@ class LoginSchemas(BaseModel):
     class Config:
         from_attributes = True
 
-class ResponseDeviceDataSchemas(BaseModel):
+class ResponseEndPointsDataSchemas(BaseModel):
     status: bool
     sys_descr: Optional[str]
     cpu: Optional[str]

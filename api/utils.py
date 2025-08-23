@@ -1,6 +1,6 @@
 import re
 from ipaddress import ip_address
-from schemas import DeviceSchemas
+from schemas import EndPointSchemas
 
 
 
@@ -39,45 +39,45 @@ def is_valid_url(url: str) -> bool:
     return bool(url_regex.match(url))
 
 
-def valid_device(device_schemas: DeviceSchemas) -> bool:
-    """Valida se o dispositivo é um endereço IP ou domínio válido.
+def valid_end_point(end_point_schemas: EndPointSchemas) -> bool:
+    """Valida se o endpoint é um endereço IP ou domínio válido.
 
     Args:
-        device_schemas (DeviceSchemas): O esquema do dispositivo a ser validado.
+        end_point_schemas (EndPointSchemas): O esquema do endpoint a ser validado.
 
     Returns:
-        bool: True se o dispositivo for válido, False caso contrário.
+        bool: True se o endpoint for válido, False caso contrário.
     """
 
     # Validações básicas
-    if not is_valid_ip(device_schemas.ip) and not is_valid_url(device_schemas.ip):
+    if not is_valid_ip(end_point_schemas.ip) and not is_valid_url(end_point_schemas.ip):
         return False
-    if device_schemas.interval <= 0:
+    if end_point_schemas.interval <= 0:
         return False
-    if device_schemas.version not in ["1", "2c", "3", ""]:
+    if end_point_schemas.version not in ["1", "2c", "3", ""]:
         return False
-    if device_schemas.community and device_schemas.user:
+    if end_point_schemas.community and end_point_schemas.user:
         return False
 
     # so ping
-    if (device_schemas.ip and device_schemas.interval and not device_schemas.version and
-        not device_schemas.community and not device_schemas.port and not device_schemas.user and
-        not device_schemas.authKey and not device_schemas.privKey):
+    if (end_point_schemas.ip and end_point_schemas.interval and not end_point_schemas.version and
+        not end_point_schemas.community and not end_point_schemas.port and not end_point_schemas.user and
+        not end_point_schemas.authKey and not end_point_schemas.privKey):
         return True
 
     # ping snmp 1
-    if (device_schemas.ip and device_schemas.interval and device_schemas.version == "1" and
-        device_schemas.community and device_schemas.port):
+    if (end_point_schemas.ip and end_point_schemas.interval and end_point_schemas.version == "1" and
+        end_point_schemas.community and end_point_schemas.port):
         return True
 
     # ping snmp 2
-    if (device_schemas.ip and device_schemas.interval and device_schemas.version == "2c" and
-        device_schemas.community and device_schemas.port):
+    if (end_point_schemas.ip and end_point_schemas.interval and end_point_schemas.version == "2c" and
+        end_point_schemas.community and end_point_schemas.port):
         return True
 
     # ping snmp 3
-    if (device_schemas.ip and device_schemas.interval and device_schemas.version == "3" and
-        not device_schemas.community and device_schemas.port):
+    if (end_point_schemas.ip and end_point_schemas.interval and end_point_schemas.version == "3" and
+        not end_point_schemas.community and end_point_schemas.port):
         return True
 
     return False

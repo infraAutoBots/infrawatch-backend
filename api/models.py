@@ -8,9 +8,11 @@ from sqlalchemy.orm import declarative_base, relationship
 filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database.db'))
 db = create_engine(f'sqlite:///{filename}')
 
+
 # criar a base do banco de dados
 Base = declarative_base()
-    
+
+
 #criar classes/tabela do seu banco de dados
 class Users(Base):
     __tablename__ = 'users'
@@ -38,8 +40,8 @@ class Users(Base):
         self.access_level = access_level
 
 
-class Devices(Base):
-    __tablename__ = 'devices'
+class EndPoints(Base):
+    __tablename__ = 'endpoints'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     ip = Column("ip", String)
@@ -52,7 +54,7 @@ class Devices(Base):
     privKey = Column("privKey", String)
     webhook = Column("webhook", String)
     id_user = Column("id_usuario", Integer, ForeignKey('users.id'))
-    data_device = relationship("DeviceData", cascade="all, delete")
+    end_points_data = relationship("EndPointsData", cascade="all, delete")
 
     def __init__(self, ip, interval, version, community, port, user, authKey, privKey, webhook, id_user):
         self.ip = ip
@@ -67,11 +69,11 @@ class Devices(Base):
         self.id_user = id_user
 
 
-class DeviceData(Base):
-    __tablename__ = 'device_data'
+class EndPointsData(Base):
+    __tablename__ = 'endpoints_data'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
-    id_device = Column("id_device", Integer, ForeignKey('devices.id'))
+    id_end_point = Column("id_end_point", Integer, ForeignKey('endpoints.id'))
     status = Column("status", Boolean)
     sys_descr = Column("sys_descr", Text)
     cpu = Column("cpu", String)
@@ -79,9 +81,10 @@ class DeviceData(Base):
     uptime = Column("uptime", String)
     storage = Column("storage", String)
     last_updated = Column("last_updated", DateTime)
+    # resposta
 
-    def __init__(self, id_device, status, sys_descr, cpu, disk, uptime, storage, last_updated):
-        self.id_device = id_device
+    def __init__(self, id_end_point, status, sys_descr, cpu, disk, uptime, storage, last_updated):
+        self.id_end_point = id_end_point
         self.status = status
         self.sys_descr = sys_descr
         self.cpu = cpu
