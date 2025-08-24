@@ -162,13 +162,24 @@ Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai esc
 
 
 ######### o monitoramento vai fucionar da seguinte forma #########
-1. usar orm para padronizacao tabelas e schemas
+1. usar orm para padronizacao tabelas e schemas V/
+1.1 O monitoramento vai coletar os dados dos ips e os oids dos endpoints V/
 2. conecao com bando de dados.
-3. O monitoramento vai coletar os ips e os oids dos despositivos
-4. vai coletar os dados remotos e add na bd
+    2.1 carregar todos os dados necessarios e guardar o a quantidade de endpoints
+    2.3 verificar se a quantidade de endpoint ainda e o mesmo nao for carregar
+    2.4 criar um carregamento inteligente que
+    vai verificar quais dados novos  endpoints add e quais remover
+    fazer o monitoramento
 
+    poblema: Quando um servidor cai a conexao e perdida e quando por causa do servidor
+    poblema: quando o servidor volta o sistema nao consegue se conectar de novo
 
+3. vai coletar os dados remotos e add na bd V/
 
+Nota: seria interecante se na interface podece temum btn que diz que este enpoint ainda nao vai ser monitorado se vaiser monitorado
+
+finaly:
+# Fazer os teste com dados e os teste sem dados no monitoramento
 # Ajustar a saida dos dados da ApI
 # dar no cloud para ajustar o codigo e otimizar
 
@@ -177,7 +188,7 @@ Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai esc
 {
     "ip": "127.0.0.1",
     "interval": 30,
-    "version": "2c",
+    "version": "2c",'
     "community": "public",
     "port": 161,
     "user": "",
