@@ -55,6 +55,7 @@ class EndPoints(Base):
     webhook = Column("webhook", String)
     id_user = Column("id_usuario", Integer, ForeignKey('users.id'))
     end_points_data = relationship("EndPointsData", cascade="all, delete")
+    end_points_oids = relationship("EndPointOIDs", cascade="all, delete")
 
     def __init__(self, ip, interval, version, community, port, user, authKey, privKey, webhook, id_user):
         self.ip = ip
@@ -75,23 +76,55 @@ class EndPointsData(Base):
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     id_end_point = Column("id_end_point", Integer, ForeignKey('endpoints.id'))
     status = Column("status", Boolean)
-    sys_descr = Column("sys_descr", Text)
-    cpu = Column("cpu", String)
-    disk = Column("disk", String)
-    uptime = Column("uptime", String)
-    storage = Column("storage", String)
+    sysDescr = Column("sysDescr", Text)
+    sysName = Column("sysName", String)
+    sysUpTime = Column("sysUpTime", String)
+    hrProcessorLoad = Column("hrProcessorLoad", String)
+    memTotalReal = Column("memTotalReal", String)
+    memAvailReal = Column("memAvailReal", String)
+    hrStorageSize = Column("hrStorageSize", String)
+    hrStorageUsed = Column("hrStorageUsed", String)
     last_updated = Column("last_updated", DateTime)
     # resposta
 
-    def __init__(self, id_end_point, status, sys_descr, cpu, disk, uptime, storage, last_updated):
+    def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, last_updated):
         self.id_end_point = id_end_point
         self.status = status
-        self.sys_descr = sys_descr
-        self.cpu = cpu
-        self.disk = disk
-        self.uptime = uptime
-        self.storage = storage
+        self.sysDescr = sysDescr
+        self.sysName = sysName
+        self.sysUpTime = sysUpTime
+        self.hrProcessorLoad = hrProcessorLoad
+        self.memTotalReal = memTotalReal
+        self.memAvailReal = memAvailReal
+        self.hrStorageSize = hrStorageSize
+        self.hrStorageUsed = hrStorageUsed
         self.last_updated = last_updated
+
+
+class EndPointOIDs(Base):
+    __tablename__ = 'endpoints_oids'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    id_end_point = Column("id_end_point", Integer, ForeignKey('endpoints.id'))
+    sysDescr = Column("sysDescr", Text)
+    sysName = Column("sysName", String)
+    sysUpTime = Column("sysUpTime", String)
+    hrProcessorLoad = Column("hrProcessorLoad", String)
+    memTotalReal = Column("memTotalReal", String)
+    memAvailReal = Column("memAvailReal", String)
+    hrStorageSize = Column("hrStorageSize", String)
+    hrStorageUsed = Column("hrStorageUsed", String)
+
+    def __init__(self, id_end_point, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed):
+        self.id_end_point = id_end_point
+        self.sysDescr = sysDescr
+        self.sysName = sysName
+        self.sysUpTime = sysUpTime
+        self.hrProcessorLoad = hrProcessorLoad
+        self.memTotalReal = memTotalReal
+        self.memAvailReal = memAvailReal
+        self.hrStorageSize = hrStorageSize
+        self.hrStorageUsed = hrStorageUsed
 
 # executar a criacao dos metadados do banco de dados
 # alembic init alembic
