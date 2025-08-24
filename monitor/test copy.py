@@ -1,19 +1,13 @@
+# app_optimized.py
 import asyncio
 import logging
-from tkinter import NO
 from typing import Dict, List, Optional, Tuple
-from unittest import result
 from icmplib import async_multiping
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 import os
 from dataclasses import dataclass
 from contextlib import asynccontextmanager
-from dependencies import init_session
-from sqlalchemy.orm import Session
-from models import EndPoints, EndPointOIDs
-from schemas import EndPointOIDsSchemas
-from pprint import pprint
 from pysnmp.hlapi.v3arch.asyncio import (
     get_cmd, SnmpEngine, UdpTransportTarget,
     CommunityData, ContextData, ObjectType, ObjectIdentity, UsmUserData
@@ -28,28 +22,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class HostStatus:
     ip: str
     is_alive: bool = False
-    interval: int = 0
-    version: str = ""
-    community: str = ""
-    port: Optional[int] = None
-    user: str = ""
-    authKey: str = ""
-    privKey: str = ""
-    webhook: str = ""
-    snmp_data: Dict[str, str] = None
-    oids: List[str] = None
+    snmp_data: Dict = None
     last_updated: datetime = None
     ping_rtt: float = 0.0
 
 # Pool global de engines SNMP (reutilização)
 _snmp_engines = asyncio.Queue(maxsize=10)
 _engines_created = 0
-
 
 @asynccontextmanager
 async def get_snmp_engine():
@@ -71,7 +54,6 @@ async def get_snmp_engine():
         except asyncio.QueueFull:
             engine.transport_dispatcher.close_dispatcher()
 
-
 # OIDs otimizados (apenas os mais essenciais)
 ESSENTIAL_OIDS = {
     "sysDescr": "1.3.6.1.2.1.1.1.0",
@@ -79,67 +61,18 @@ ESSENTIAL_OIDS = {
     "cpu": "1.3.6.1.4.1.2021.11.9.0"  # Apenas um OID por métrica
 }
 
-
-def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
-    oids = {}
-    oids_data = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == row.id).first()
-    if oids_data:
-        oids = {
-            "sysDescr": oids_data.sysDescr,
-            "sysName": oids_data.sysName,
-            "sysUpTime": oids_data.sysUpTime,
-            "hrProcessorLoad": oids_data.hrProcessorLoad,
-            "memTotalReal": oids_data.memTotalReal,
-            "memAvailReal": oids_data.memAvailReal,
-            "hrStorageSize": oids_data.hrStorageSize,
-            "hrStorageUsed": oids_data.hrStorageUsed
-        }
-    return HostStatus(
-        ip=row.ip,
-        is_alive=False,
-        interval=row.interval,
-        version=row.version,
-        community=row.community,
-        port=row.port,
-        user=row.user,
-        authKey=row.authKey,
-        privKey=row.privKey,
-        webhook=row.webhook,
-        oids=oids
-    )
-
-# def chek_snmp_data_is_None(data: Dict) -> bool:
-    # { 'oid_0': 'Darwin MacBook-Pro-2.local 19.5.0 Darwin Kernel Version 19.5.0: Tue May 26 20:41:44 PDT 2020; root:xnu-6153.121.2~2/RELEASE_X86_64 x86_64',
-    #   'oid_1': 'MacBook-Pro-2.local', 
-    #   'oid_2': '66590',
-    #   'oid_3': '',
-    #   'oid_4': '', 
-    #   'oid_5': '',
-    #   'oid_6': '',
-    #   'oid_7': ''}
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-
-
 class OptimizedMonitor:
-    def __init__(self, session: Session = init_session()):
+    def __init__(self):
         self.hosts_status: Dict[str, HostStatus] = {}
         self.lock = asyncio.Lock()
         self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80,443,22,161").split(",")]
-
-        # criar uma sessão e pegar todos os ips/host e Inicialização dos hosts
-        if session:
-            data = session.query(EndPoints).all()
-            for row in data:
-                self.hosts_status[row.ip] = get_HostStatus(row, session)
-            session.close()
-
+        
+        # Inicialização dos hosts
+        # criar uma sessão e pegar todos os ips/host
+        ips = ['192.168.8.159', '192.168.8.146', '192.168.8.121', '127.0.0.1', '127.0.0.2']
+        for ip in ips:
+            self.hosts_status[ip] = HostStatus(ip=ip)
+    
     async def fast_ping_check(self, ips: List[str]) -> Dict[str, Tuple[bool, float]]:
         """Ping ultra-rápido com timeout agressivo"""
         try:
@@ -156,7 +89,7 @@ class OptimizedMonitor:
         except Exception as e:
             logger.debug(f"Ping error: {e}")
             return {ip: (False, 0.0) for ip in ips}
-
+    
     async def fast_tcp_check(self, ip: str) -> bool:
         """TCP check paralelo e ultra-rápido"""
         async def check_port(port):
@@ -175,37 +108,29 @@ class OptimizedMonitor:
         tasks = [check_port(port) for port in self.tcp_ports[:2]]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return any(r is True for r in results)
-
-    async def fast_snmp_check(self, ip: str):
-        """SNMP otimizado com pool de engines - coleta todos os OIDs"""
+    
+    async def fast_snmp_check(self, ip: str) -> Optional[Dict[str, str]]:
+        """SNMP otimizado com pool de engines"""
         async with get_snmp_engine() as engine:
             try:
-                auth_data = CommunityData(self.hosts_status[ip].community, mpModel=1)
-                oids_values = self.hosts_status[ip].oids.values() or []
-                oids_keys = list(self.hosts_status[ip].oids.keys())
-                result = {}
-
-                for idx, oid in enumerate(oids_values):
-                    try:
-                        error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
-                            get_cmd(
-                                engine, auth_data,
-                                await UdpTransportTarget.create((ip, 161), timeout=0.5, retries=0),
-                                ContextData(), ObjectType(ObjectIdentity(oid))
-                            ), timeout=1.0
-                        )
-
-                        if not (error_indication or error_status or error_index):
-                            result[oids_keys[idx]] = str(var_binds[0][1])
-                        else:
-                            result[oids_keys[idx]] = None
-                    except Exception as e:
-                        logger.debug(f"SNMP error for {ip} OID {oid}: {e}")
-                        result[oids_keys[idx]] = None
-                return result
+                auth_data = CommunityData(os.getenv("SNMP_COMMUNITY", "public"), mpModel=1)
+                
+                # Apenas sysDescr para verificação rápida de conectividade
+                error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
+                    get_cmd(
+                        engine, auth_data,
+                        await UdpTransportTarget.create((ip, 161), timeout=0.5, retries=0),
+                        ContextData(), 
+                        ObjectType(ObjectIdentity(ESSENTIAL_OIDS["sysDescr"]))
+                    ),
+                    timeout=1.0
+                )
+                
+                if not (error_indication or error_status or error_index):
+                    return {"sysDescr": str(var_binds[0][1])}
             except Exception as e:
                 logger.debug(f"SNMP error for {ip}: {e}")
-                return result
+        return None
     
     async def check_single_host(self, host_status: HostStatus) -> HostStatus:
         """Verificação completa de um host com fallbacks inteligentes"""
@@ -214,9 +139,9 @@ class OptimizedMonitor:
         # 1. Ping primeiro (mais rápido)
         ping_results = await self.fast_ping_check([ip])
         is_alive, rtt = ping_results.get(ip, (False, 0.0))
-
+        
         snmp_data = None
-
+        
         if is_alive:
             # Se ping OK, tenta SNMP
             snmp_data = await self.fast_snmp_check(ip)
@@ -227,12 +152,14 @@ class OptimizedMonitor:
                 is_alive = True
                 # Se TCP OK, tenta SNMP também
                 snmp_data = await self.fast_snmp_check(ip)
-    
-        self.hosts_status[ip].is_alive = is_alive
-        self.hosts_status[ip].snmp_data = snmp_data
-        self.hosts_status[ip].last_updated = datetime.now(timezone.utc)
-        self.hosts_status[ip].ping_rtt = rtt
-        return self.hosts_status[ip]
+        
+        return HostStatus(
+            ip=ip,
+            is_alive=is_alive,
+            snmp_data=snmp_data or {},
+            last_updated=datetime.now(timezone.utc),
+            ping_rtt=rtt
+        )
     
     async def monitoring_cycle(self):
         """Um ciclo de monitoramento otimizado"""
@@ -252,11 +179,16 @@ class OptimizedMonitor:
                     if isinstance(result, Exception):
                         logger.error(f"Error checking {ips[i]}: {result}")
                         continue
-                    print(self.hosts_status[result.ip] == result)
-                    yield {"ip": result.ip, "hosts": self.hosts_status[result.ip]}
+                    
+                    self.hosts_status[result.ip] = result
+                    # chamo uma fucao logged que armazenas os dados na db
+                    status_icon = "🟢" if result.is_alive else "🔴"
+                    snmp_icon = "📊" if result.snmp_data else "❌"
+                    
+                    print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}")
+                    
         except Exception as e:
             logger.error(f"Monitoring cycle error: {e}")
-            yield {"ip": result.ip, "hosts": None}
     
     async def run_monitoring(self, interval: float = 2.0):
         """Loop principal otimizado"""
@@ -264,25 +196,20 @@ class OptimizedMonitor:
         
         while True:
             start_time = asyncio.get_event_loop().time()
-
-            async for result in self.monitoring_cycle():
-                pprint(result)
-
+            
+            await self.monitoring_cycle()
+            
             # Calcula tempo decorrido e ajusta sleep
             elapsed = asyncio.get_event_loop().time() - start_time
             sleep_time = max(0.1, interval - elapsed)
             
-            print(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
             logger.debug(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
             await asyncio.sleep(sleep_time)
 
 # Versão ainda mais otimizada para casos extremos
 class HyperFastMonitor(OptimizedMonitor):
     """Versão para quando você precisa de velocidade máxima"""
-
-    async def monitoring_cycle(self):
-        await self.hyper_monitoring_cycle()
-
+    
     async def hyper_check(self, ip: str) -> Tuple[bool, Optional[str]]:
         """Verificação híbrida ultra-rápida"""
         # Ping e SNMP em paralelo
@@ -333,16 +260,14 @@ class HyperFastMonitor(OptimizedMonitor):
 if __name__ == "__main__":
     import sys
     
-    mode = sys.argv[1] if len(sys.argv) > 1 else "hypers"
+    mode = sys.argv[1] if len(sys.argv) > 1 else "hyper"
 
-    # se estiver online  e nao cosegui pegar os dados 4 relatar
-    # se estiver offline  relatar como offline
 
     if mode == "hyper":
         print("🏃‍♂️ Modo HYPER-RÁPIDO ativado!")
         monitor = HyperFastMonitor()
-        asyncio.run(monitor.run_monitoring(interval=30.0))
+        asyncio.run(monitor.run_monitoring(interval=1.0))
     else:
         print("⚡ Modo OTIMIZADO ativado!")
         monitor = OptimizedMonitor()
-        asyncio.run(monitor.run_monitoring(interval=30.0))
+        asyncio.run(monitor.run_monitoring(interval=2.0))
