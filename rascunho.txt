@@ -20,6 +20,7 @@ versao que funciona com snmp (ping e snmpv3)
 {
 1. {
     "ip": "192.168.8.159",
+    "interval": 30,
     "version": "3",
     "community": "",
     "port": 161,
@@ -83,3 +84,112 @@ versao que funciona com snmp (ping e snmpv3)
 }
 }
 
+
+
+
+
+# oid data
+id
+nome
+sysDescr_id :null
+cpu_id :null
+disk_id :null
+uptime_id :null
+storage_id :null
+
+
+
+# oid value
+id
+marca
+value
+
+
+
+OIDS = {
+    "sysDescr": [
+        "1.3.6.1.2.1.1.1.0",  # padrão
+    ],
+    "cpu": [
+        "1.3.6.1.4.1.2021.11.9.0",   # UCD-SNMP CPU idle
+        "1.3.6.1.4.1.9.2.1.57.0",    # Cisco CPU
+        "1.3.6.1.4.1.2636.3.1.13.1.8.0",  # Juniper CPU
+        "1.3.6.1.4.1.2021.11.50.0",  # Linux CPU system
+        "1.3.6.1.4.1.2021.11.52.0",  # Linux CPU user
+    ],
+    "disk": [
+        "1.3.6.1.4.1.2021.9.1.6.1",   # UCD-SNMP disk
+        "1.3.6.1.4.1.9.9.305.1.1.1.0", # Cisco Disk
+        "1.3.6.1.4.1.2636.3.1.13.1.11.0", # Juniper Disk
+    ],
+    "uptime": [
+        "1.3.6.1.2.1.1.3.0",  # padrão sysUpTime
+    ],
+    "storage": [
+        "1.3.6.1.4.1.2021.4.6.0",   # UCD-SNMP memory free
+        "1.3.6.1.4.1.9.2.1.8.0",    # Cisco memory
+        "1.3.6.1.4.1.2636.3.1.13.1.15.0", # Juniper memory
+        "1.3.6.1.4.1.2021.4.5.0",   # Linux total RAM
+    ]
+}
+
+
+
+fazer testes e marcar o oids  de cada device com base no  iod que funcionou
+
+
+
+# ajustar na api
+0.1.opcional. Ajustar os nomes de device para endpoit e data endpoit                    V/
+1.1. Definir os dados que seram coletados.                                              V/
+{
+    id_end_poit
+    sysDescr (1.3.6.1.2.1.1.1.0) – Descrição do sistema (SO, versão, etc.)
+    sysName (1.3.6.1.2.1.1.5.0) – Nome do host
+    sysUpTime (1.3.6.1.2.1.1.3.0) – Tempo de atividade desde o último reboot
+    hrProcessorLoad (1.3.6.1.2.1.25.3.3.1.2) – Uso de CPU (Carga da CPU por núcleo)
+    memTotalReal (1.3.6.1.4.1.2021.4.5.0) – Total de memória física
+    memAvailReal (1.3.6.1.4.1.2021.4.6.0) – Memória física livre
+    hrStorageSize (1.3.6.1.2.1.25.2.3.1.5) – Capacidade total Armazenamento e discos
+    hrStorageUsed (1.3.6.1.2.1.25.2.3.1.6) – Espaço utilizado Armazenamento e discos
+}
+1.2. Ajustar a tabela e schemas rotas que trabalham com os valores dos endpoit  V/
+    os dados do oid tem que ser enviado com os dados do oid                     V/ 
+    os oids seram add com o endpoint.
+Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai escolher opcoes ja exixtentes
+
+
+
+
+######### o monitoramento vai fucionar da seguinte forma #########
+1. usar orm para padronizacao tabelas e schemas
+2. conecao com bando de dados.
+3. O monitoramento vai coletar os ips e os oids dos despositivos
+4. vai coletar os dados remotos e add na bd
+
+
+
+# Ajustar a saida dos dados da ApI
+# dar no cloud para ajustar o codigo e otimizar
+
+
+
+{
+    "ip": "127.0.0.1",
+    "interval": 30,
+    "version": "2c",
+    "community": "public",
+    "port": 161,
+    "user": "",
+    "authKey": "",
+    "privKey": "",
+    "webhook": "",
+    "sysDescr": "1.3.6.1.2.1.1.1.0",
+    "sysName": "1.3.6.1.2.1.1.5.0",
+    "sysUpTime": "1.3.6.1.2.1.1.3.0",
+    "hrProcessorLoad": "1.3.6.1.2.1.25.3.3.1.2",
+    "memTotalReal": "1.3.6.1.4.1.2021.4.5.0",
+    "memAvailReal": "1.3.6.1.4.1.2021.4.6.0",
+    "hrStorageSize": "1.3.6.1.2.1.25.2.3.1.5",
+    "hrStorageUsed": "1.3.6.1.2.1.25.2.3.1.6"
+}

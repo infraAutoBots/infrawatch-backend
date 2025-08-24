@@ -79,9 +79,6 @@ async def snmp_get(ip: str, version: str, community: str, user: str, auth_key: s
     async with snmp_engine_manager() as snmp_engine:
         for oid in OIDS[key]:
             try:
-                if version not in ("1", "2c", "3"):
-                    logger.error(f"Versão SNMP inválida: {version}")
-                    return None
 
                 if version in ("1", "2c"):
                     auth_data = CommunityData(community, mpModel=0 if version == "1" else 1)
@@ -89,24 +86,17 @@ async def snmp_get(ip: str, version: str, community: str, user: str, auth_key: s
                     auth_data = UsmUserData(user, auth_key, priv_key)
 
                 error_indication, error_status, error_index, var_binds = await get_cmd(
-                    snmp_engine,
-                    auth_data,
+                    snmp_engine, auth_data,
                     await UdpTransportTarget.create((ip, port), timeout=timeout, retries=retries),
-                    ContextData(),
-                    ObjectType(ObjectIdentity(oid))
+                    ContextData(), ObjectType(ObjectIdentity(oid))
                 )
 
-                if error_indication:
-                    logger.debug(f"Falha no OID {oid} para {ip}: {error_indication}")
-                    continue
-                elif error_status:
-                    logger.debug(f"Falha no OID {oid} para {ip}: {error_status.prettyPrint()} at {error_index and var_binds[int(error_index) - 1][0] or '?'}")
+                if error_indication or error_status or error_index:
                     continue
                 else:
                     return str(var_binds[0][1])
 
             except Exception as e:
-                logger.debug(f"Exceção no OID {oid} para {ip}: {type(e).__name__} - {str(e)}")
                 continue
         return None
 
@@ -114,7 +104,7 @@ async def snmp_get(ip: str, version: str, community: str, user: str, auth_key: s
 # ----------------------------------------
 # Função principal para coletar dados de múltiplos IPs
 # ----------------------------------------
-async def get_snmp_info(
+async def get_snmp_data(
     ips: List[str], version: str = os.getenv("SNMP_VERSION", "2c"),
     community: str = os.getenv("SNMP_COMMUNITY", "public"),
     user: str = os.getenv("SNMP_USER", ""),
@@ -127,17 +117,10 @@ async def get_snmp_info(
     Coleta informações via SNMP (sysDescr, cpu, disk, uptime, storage) para múltiplos IPs.
     Usa PySNMP para v1, v2c e v3.
     """
-    # Validação de IPs
-    for ip in ips:
-        try:
-            ip_address(ip)
-        except ValueError:
-            logger.error(f"IP inválido: {ip}")
-            return {ip: {"error": f"IP inválido: {ip}"}}
 
     results = {}
     tasks = []
-    
+
     for ip in ips:
         result = {key: None for key in OIDS.keys()}
         for key in OIDS.keys():
@@ -167,7 +150,7 @@ async def get_snmp_info(
 if __name__ == "__main__":
     async def main():
         ips = ["127.0.0.1"]
-        result = await get_snmp_info(ips)
+        result = await get_snmp_data(ips)
         for ip, data in result.items():
             logger.info(f"Resultado {ip}: {data}")
 

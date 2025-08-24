@@ -3,14 +3,18 @@ from check_tcp import check_tcp
 from check_snmp import check_snmp
 
 
-
 # Configuração de logging
 logger = logging.getLogger(__name__)
 
 
 async def check_by_service(ip: str) -> bool:
-    """
-    VERIFICAR SE UM IP ESTA ATIVO VIA SEUS SERVIÇOS
+    """Verifica se um IP está ativo via seus serviços.
+
+    Args:
+        ip (str): Endereço IP a ser verificado.
+
+    Returns:
+        bool: True se o IP estiver ativo, False caso contrário.
     """
 
     if await check_tcp(ip):
