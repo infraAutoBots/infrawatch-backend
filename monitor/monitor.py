@@ -121,6 +121,48 @@ class OptimizedMonitor:
             for row in data:
                 self.hosts_status[row.ip] = get_HostStatus(row, session)
             session.close()
+    
+    async def insert_snmp_data_async(self, session_factory, hosts: HostStatus):
+        loop = asyncio.get_event_loop()
+    
+        def sync_insert():
+            session = session_factory()
+            try:
+                data = EndPointsData(
+                    id_end_point=hosts._id,
+                    status=True,
+                    sysDescr=hosts.snmp_data.get("sysDescr"),
+                    sysName=hosts.snmp_data.get("sysName"),
+                    sysUpTime=hosts.snmp_data.get("sysUpTime"),
+                    hrProcessorLoad=hosts.snmp_data.get("hrProcessorLoad"),
+                    memTotalReal=hosts.snmp_data.get("memTotalReal"),
+                    memAvailReal=hosts.snmp_data.get("memAvailReal"),
+                    hrStorageSize=hosts.snmp_data.get("hrStorageSize"),
+                    hrStorageUsed=hosts.snmp_data.get("hrStorageUsed"),
+                    last_updated=hosts.last_updated
+                )
+                session.add(data)
+                session.commit()
+            finally:
+                session.close()
+        await loop.run_in_executor(None, sync_insert)
+
+    async def check_hosts_db(self):
+        # Exemplo: recarrega hosts do banco e atualiza self.hosts_status
+        session = init_session()
+        try:
+            data = session.query(EndPoints).all()
+            new_hosts = {row.ip: get_HostStatus(row, session) for row in data}
+            # Remove hosts que não existem mais
+            for ip in list(self.hosts_status.keys()):
+                if ip not in new_hosts:
+                    del self.hosts_status[ip]
+            # Adiciona novos hosts
+            for ip, host in new_hosts.items():
+                if ip not in self.hosts_status:
+                    self.hosts_status[ip] = host
+        finally:
+            session.close()
 
     async def fast_ping_check(self, ips: List[str]) -> Dict[str, Tuple[bool, float]]:
         """Ping ultra-rápido com timeout agressivo"""
@@ -157,31 +199,6 @@ class OptimizedMonitor:
         tasks = [check_port(port) for port in self.tcp_ports[:2]]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return any(r is True for r in results)
-
-    async def insert_snmp_data_async(self, session_factory, hosts: HostStatus):
-        loop = asyncio.get_event_loop()
-    
-        def sync_insert():
-            session = session_factory()
-            try:
-                data = EndPointsData(
-                    id_end_point=hosts._id,
-                    status=True,
-                    sysDescr=hosts.snmp_data.get("sysDescr"),
-                    sysName=hosts.snmp_data.get("sysName"),
-                    sysUpTime=hosts.snmp_data.get("sysUpTime"),
-                    hrProcessorLoad=hosts.snmp_data.get("hrProcessorLoad"),
-                    memTotalReal=hosts.snmp_data.get("memTotalReal"),
-                    memAvailReal=hosts.snmp_data.get("memAvailReal"),
-                    hrStorageSize=hosts.snmp_data.get("hrStorageSize"),
-                    hrStorageUsed=hosts.snmp_data.get("hrStorageUsed"),
-                    last_updated=hosts.last_updated
-                )
-                session.add(data)
-                session.commit()
-            finally:
-                session.close()
-        await loop.run_in_executor(None, sync_insert)
 
     async def fast_snmp_check(self, ip: str):
         """SNMP otimizado com pool de engines - coleta todos os OIDs"""
@@ -259,6 +276,10 @@ class OptimizedMonitor:
                     if isinstance(result, Exception):
                         logger.error(f"Error checking {ips[i]}: {result}")
                         continue
+
+                    status_icon = "🟢" if result.is_alive else "🔴"
+                    snmp_icon = "📊" if result.snmp_data else "❌"
+                    print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}")
                     yield result
         except Exception as e:
             logger.error(f"Monitoring cycle error: {e}")
@@ -284,7 +305,14 @@ class OptimizedMonitor:
             sleep_time = max(0.1, interval - elapsed)
 
             logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
+
+            # Executa a checagem da base de dados em paralelo ao sleep
+            check_task = asyncio.create_task(self.check_hosts_db())
             await asyncio.sleep(sleep_time)
+            await check_task  # Garante que a checagem terminou antes do próximo ciclo
+            logger.info(f"PASS Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
+
+            
 
 # Versão ainda mais otimizada para casos extremos
 class HyperFastMonitor(OptimizedMonitor):
@@ -344,7 +372,6 @@ if __name__ == "__main__":
     import sys
     
     mode = sys.argv[1] if len(sys.argv) > 1 else "hypers"
-
     # se estiver online  e nao cosegui pegar os dados 4 relatar
     # se estiver offline  relatar como offline
 
