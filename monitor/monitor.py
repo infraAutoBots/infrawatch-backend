@@ -11,9 +11,8 @@ from dataclasses import dataclass
 from contextlib import asynccontextmanager
 from dependencies import init_session
 from sqlalchemy.orm import Session
-from models import EndPoints, EndPointOIDs
-from schemas import EndPointOIDsSchemas
-from pprint import pprint
+from models import EndPoints, EndPointOIDs, EndPointsData
+from pprint import pp, pprint
 from pysnmp.hlapi.v3arch.asyncio import (
     get_cmd, SnmpEngine, UdpTransportTarget,
     CommunityData, ContextData, ObjectType, ObjectIdentity, UsmUserData
@@ -31,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class HostStatus:
-    ip: str
+    _id: Optional[int] = None
+    ip: str = ""
     is_alive: bool = False
     interval: int = 0
     version: str = ""
@@ -79,7 +79,6 @@ ESSENTIAL_OIDS = {
     "cpu": "1.3.6.1.4.1.2021.11.9.0"  # Apenas um OID por métrica
 }
 
-
 def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
     oids = {}
     oids_data = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == row.id).first()
@@ -95,6 +94,7 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
             "hrStorageUsed": oids_data.hrStorageUsed
         }
     return HostStatus(
+        _id=row.id,
         ip=row.ip,
         is_alive=False,
         interval=row.interval,
@@ -107,24 +107,6 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
         webhook=row.webhook,
         oids=oids
     )
-
-# def chek_snmp_data_is_None(data: Dict) -> bool:
-    # { 'oid_0': 'Darwin MacBook-Pro-2.local 19.5.0 Darwin Kernel Version 19.5.0: Tue May 26 20:41:44 PDT 2020; root:xnu-6153.121.2~2/RELEASE_X86_64 x86_64',
-    #   'oid_1': 'MacBook-Pro-2.local', 
-    #   'oid_2': '66590',
-    #   'oid_3': '',
-    #   'oid_4': '', 
-    #   'oid_5': '',
-    #   'oid_6': '',
-    #   'oid_7': ''}
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
-#     data.get()
 
 
 class OptimizedMonitor:
@@ -175,6 +157,31 @@ class OptimizedMonitor:
         tasks = [check_port(port) for port in self.tcp_ports[:2]]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return any(r is True for r in results)
+
+    async def insert_snmp_data_async(self, session_factory, hosts: HostStatus):
+        loop = asyncio.get_event_loop()
+    
+        def sync_insert():
+            session = session_factory()
+            try:
+                data = EndPointsData(
+                    id_end_point=hosts._id,
+                    status=True,
+                    sysDescr=hosts.snmp_data.get("sysDescr"),
+                    sysName=hosts.snmp_data.get("sysName"),
+                    sysUpTime=hosts.snmp_data.get("sysUpTime"),
+                    hrProcessorLoad=hosts.snmp_data.get("hrProcessorLoad"),
+                    memTotalReal=hosts.snmp_data.get("memTotalReal"),
+                    memAvailReal=hosts.snmp_data.get("memAvailReal"),
+                    hrStorageSize=hosts.snmp_data.get("hrStorageSize"),
+                    hrStorageUsed=hosts.snmp_data.get("hrStorageUsed"),
+                    last_updated=hosts.last_updated
+                )
+                session.add(data)
+                session.commit()
+            finally:
+                session.close()
+        await loop.run_in_executor(None, sync_insert)
 
     async def fast_snmp_check(self, ip: str):
         """SNMP otimizado com pool de engines - coleta todos os OIDs"""
@@ -230,7 +237,7 @@ class OptimizedMonitor:
     
         self.hosts_status[ip].is_alive = is_alive
         self.hosts_status[ip].snmp_data = snmp_data
-        self.hosts_status[ip].last_updated = datetime.now(timezone.utc)
+        self.hosts_status[ip].last_updated = datetime.now()
         self.hosts_status[ip].ping_rtt = rtt
         return self.hosts_status[ip]
     
@@ -252,28 +259,31 @@ class OptimizedMonitor:
                     if isinstance(result, Exception):
                         logger.error(f"Error checking {ips[i]}: {result}")
                         continue
-                    print(self.hosts_status[result.ip] == result)
-                    yield {"ip": result.ip, "hosts": self.hosts_status[result.ip]}
+                    yield result
         except Exception as e:
             logger.error(f"Monitoring cycle error: {e}")
-            yield {"ip": result.ip, "hosts": None}
-    
+            yield result
+   
     async def run_monitoring(self, interval: float = 2.0):
         """Loop principal otimizado"""
         logger.info("🚀 Iniciando monitoramento otimizado...")
-        
+
+        session_factory = init_session  # Função que retorna uma nova Session
+
         while True:
             start_time = asyncio.get_event_loop().time()
 
             async for result in self.monitoring_cycle():
-                pprint(result)
+                if result:
+                    interval = int(result.interval) if result else interval
+                if result and result.snmp_data:
+                    await self.insert_snmp_data_async(session_factory, result)
 
             # Calcula tempo decorrido e ajusta sleep
             elapsed = asyncio.get_event_loop().time() - start_time
             sleep_time = max(0.1, interval - elapsed)
-            
-            print(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
-            logger.debug(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
+
+            logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
             await asyncio.sleep(sleep_time)
 
 # Versão ainda mais otimizada para casos extremos
@@ -323,7 +333,7 @@ class HyperFastMonitor(OptimizedMonitor):
                     ip=ip,
                     is_alive=is_alive,
                     snmp_data={'sysDescr': snmp_desc} if snmp_desc else {},
-                    last_updated=datetime.now(timezone.utc)
+                    last_updated=datetime.now()
                 )
                 
                 status = "🟢" if is_alive else "🔴"
