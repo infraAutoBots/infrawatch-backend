@@ -239,6 +239,7 @@ class OptimizedMonitor:
 
 4. Estratégia de Reconexão Exponential Backoff
 
+
 @bash
 import random
 
