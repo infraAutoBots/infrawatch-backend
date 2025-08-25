@@ -171,18 +171,21 @@ Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai esc
     2.4 criar um carregamento inteligente que vai verificar quais dados novos
      endpoints add e quais remover fazer o monitoramento  V/
 
-3. VALIDACAO A ADD:
+3. VALIDACAO A ADD: V/
     para tentar pegar os dados via snmp tem que cumprir um
     requisto ter oid e od dados relacionados a isso prenchidos
 
-3.1 ADD MONITORAMENTO COM A VERSAO 3 DO SNMP
+3.1 ADD MONITORAMENTO COM A VERSAO 3 DO SNMP  V/
 
 4.  POBLEMA:
     quando o simulador snmp e fechado todos teste snmp falha
     quando voltamos a abrir o simulador e ativemos os endpoints
     snmp o codigo de monitoramento nao consegue funcionar, para
     funcionar e necessario para o codigo e executar de novo
-    possiblidade a engine cria fica com poblema.
+    possiblidade a engine cria fica 
+    
+    
+    com poblema.
 
     POSSIVEL SOLUCAO: depois de tentar fazer a requisicao
     10 e nao for possivel pagar os dados criar uma nova
