@@ -3,7 +3,7 @@
 POBLEMA:
 quando o simulador snmp (SNMP Agent simulator 5.1) e fechado todos teste snmp falha e marca que nao e possivel se conectar via snmp, o ping funciona por ser local host mas se fosse remoto naofuncionaria.
 
-@bash
+```bash
 Quando voltamos a abrir o simulador e ativemos os endpoints do
 snmp, enquanto o codigo de monitoramento ainda esta a rodar, o monitoramento não consegue fazer refazer a conexão com os end points. Para que a conexão seja feita e necessario é necessario reexecutar  o codigo de monitoramento.
 
@@ -15,7 +15,7 @@ POSSIVEL SOLUCAO: depois de tentar fazer a requisicao
 engine de conexão
 
 me de ideas pararesoler o problema ou me sugere uma implementacaoque resola o problema
-@bash
+```
 
 
 
@@ -28,7 +28,8 @@ Olhando seu código em monitor.py, vejo que você usa um pool de engines SNMP co
 Soluções para implementar:
 1. Engine Rotation com Fallback (Recomendado)
 Implementar um sistema que detecta falhas e recria engines automaticamente:
-@bash
+
+```bash
 import asyncio
 from datetime import datetime, timedelta
 
@@ -123,11 +124,12 @@ class OptimizedMonitor:
                 self.engine_failures[ip] = self.engine_failures.get(ip, 0) + 1
                 logger.debug(f"SNMP error for {ip}: {e}. Total falhas: {self.engine_failures[ip]}")
                 return {}
-@bash
+```
 
 2. Health Check Periódico
 Adicionar verificação de saúde das engines:
-@bash
+
+```bash
 class OptimizedMonitor:
     async def health_check_snmp_engines(self):
         """Verifica saúde das engines periodicamente"""
@@ -176,10 +178,11 @@ class OptimizedMonitor:
         
         # Inicia health check em background
         asyncio.create_task(self.health_check_snmp_engines())
-@bash
+```
 
 3. Implementar Circuit Breaker Pattern
-@bash
+
+```bash
 from enum import Enum
 from datetime import datetime, timedelta
 
@@ -235,12 +238,12 @@ class OptimizedMonitor:
         if ip not in self.circuit_breakers:
             self.circuit_breakers[ip] = SNMPCircuitBreaker()
         return self.circuit_breakers[ip]
-@bash
+```
 
 4. Estratégia de Reconexão Exponential Backoff
 
 
-@bash
+```bash
 import random
 
 async def exponential_backoff_snmp(self, ip: str, max_retries=5):
@@ -269,7 +272,7 @@ async def exponential_backoff_snmp(self, ip: str, max_retries=5):
             await asyncio.sleep(delay)
     
     return {}
-@bash
+```
 
 Recomendação Final:
 Implemente a Solução 1 (Engine Rotation) primeiro, pois é mais simples e resolve diretamente seu problema. Se ainda tiver issues, adicione o Health Check (Solução 2).
