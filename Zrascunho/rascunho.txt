@@ -195,11 +195,27 @@ Nota: seria interecante se na interface podece temum btn que diz
       que este enpoint ainda nao vai ser monitorado se vaiser monitorado
 
 finaly:
-# Fazer os teste com dados e os teste sem dados no monitoramento
-# Ajustar a saida dos dados da ApI
-# dar no cloud para ajustar o codigo e otimizar
+    # Fazer os teste com dados e os teste sem dados no monitoramento
+    # Ajustar a saida dos dados da ApI
+    # dar no cloud para ajustar o codigo e otimizar
 
 
+5. ADD O MONITORAMENTO VIA WEBHOOK
+
+
+6. ADD O MONITORAMENTO VIA API
+
+
+7. DOKERINZANDO A APLICACAO 
+
+
+8. AUTOMATIZANDO TESTE
+
+
+9 FAZER DEPLOY
+
+
+10 ATT
 
 {
     "ip": "127.0.0.1",
