@@ -164,19 +164,32 @@ Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai esc
 ######### o monitoramento vai fucionar da seguinte forma #########
 1. usar orm para padronizacao tabelas e schemas V/
 1.1 O monitoramento vai coletar os dados dos ips e os oids dos endpoints V/
-2. conecao com bando de dados.
-    2.1 carregar todos os dados necessarios e guardar o a quantidade de endpoints
-    2.3 verificar se a quantidade de endpoint ainda e o mesmo nao for carregar
-    2.4 criar um carregamento inteligente que
-    vai verificar quais dados novos  endpoints add e quais remover
-    fazer o monitoramento
+1.2 vai coletar os dados remotos e add na bd V/
+2. conecao com bando de dados. V/
+    2.1 carregar todos os dados necessarios e guardar o a quantidade de endpoints V/
+    2.3 verificar se a quantidade de endpoint ainda e o mesmo nao for carregar V/
+    2.4 criar um carregamento inteligente que vai verificar quais dados novos
+     endpoints add e quais remover fazer o monitoramento  V/
 
-    poblema: Quando um servidor cai a conexao e perdida e quando por causa do servidor
-    poblema: quando o servidor volta o sistema nao consegue se conectar de novo
+3. VALIDACAO A ADD:
+    para tentar pegar os dados via snmp tem que cumprir um
+    requisto ter oid e od dados relacionados a isso prenchidos
 
-3. vai coletar os dados remotos e add na bd V/
+3.1 ADD MONITORAMENTO COM A VERSAO 3 DO SNMP
 
-Nota: seria interecante se na interface podece temum btn que diz que este enpoint ainda nao vai ser monitorado se vaiser monitorado
+4.  POBLEMA:
+    quando o simulador snmp e fechado todos teste snmp falha
+    quando voltamos a abrir o simulador e ativemos os endpoints
+    snmp o codigo de monitoramento nao consegue funcionar, para
+    funcionar e necessario para o codigo e executar de novo
+    possiblidade a engine cria fica com poblema.
+
+    POSSIVEL SOLUCAO: depois de tentar fazer a requisicao
+    10 e nao for possivel pagar os dados criar uma nova
+    engine de conexao
+
+Nota: seria interecante se na interface podece temum btn que diz
+      que este enpoint ainda nao vai ser monitorado se vaiser monitorado
 
 finaly:
 # Fazer os teste com dados e os teste sem dados no monitoramento
@@ -188,7 +201,7 @@ finaly:
 {
     "ip": "127.0.0.1",
     "interval": 30,
-    "version": "2c",'
+    "version": "2c",
     "community": "public",
     "port": 161,
     "user": "",
@@ -204,3 +217,5 @@ finaly:
     "hrStorageSize": "1.3.6.1.2.1.25.2.3.1.5",
     "hrStorageUsed": "1.3.6.1.2.1.25.2.3.1.6"
 }
+
+
