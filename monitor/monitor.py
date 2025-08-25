@@ -13,10 +13,10 @@ from dependencies import init_session
 from sqlalchemy.orm import Session
 from models import EndPoints, EndPointOIDs, EndPointsData
 from pprint import pp, pprint
-from pysnmp.hlapi.v3arch.asyncio import (
-    get_cmd, SnmpEngine, UdpTransportTarget,
-    CommunityData, ContextData, ObjectType, ObjectIdentity, UsmUserData
-)
+from pysnmp.hlapi.v3arch.asyncio import (get_cmd, SnmpEngine, UdpTransportTarget,
+                                         CommunityData, ContextData, ObjectType,
+                                         ObjectIdentity, UsmUserData, usmHMACSHAAuthProtocol,
+                                         usmAesCfb128Protocol)
 
 load_dotenv()
 
@@ -79,6 +79,13 @@ ESSENTIAL_OIDS = {
     "cpu": "1.3.6.1.4.1.2021.11.9.0"  # Apenas um OID por métrica
 }
 
+
+def print_logs(result):
+    status_icon = "🟢" if result.is_alive else "🔴"
+    snmp_icon = f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}" if result.snmp_data and result.snmp_data.get('sysDescr') else "❌"
+    print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}")
+
+
 def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
     oids = {}
     oids_data = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == row.id).first()
@@ -107,6 +114,39 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
         webhook=row.webhook,
         oids=oids
     )
+
+
+def check_ip_for_snmp(host: HostStatus):
+    if (host.ip and host.interval and not host.port 
+        and not host.version and not host.community
+        and not host.user and not host.authKey 
+        and not host.privKey):
+        return False
+    return True 
+
+
+def select_snmp_authentication(host: HostStatus):
+    if host.version in ["1", "2c"]:
+        auth_data = CommunityData(host.community, mpModel=0 if host.version == "1" else 1)
+    else:
+        # Configura credenciais dependendo do caso
+        if host.authKey and host.privKey:
+            auth_data = UsmUserData(
+                userName=host.user,
+                authKey=host.authKey,
+                privKey=host.privKey,
+                authProtocol=usmHMACSHAAuthProtocol,
+                privProtocol=usmAesCfb128Protocol,
+            )
+        elif host.authKey:
+            auth_data = UsmUserData(
+                userName=host.user,
+                authKey=host.authKey,
+                authProtocol=usmHMACSHAAuthProtocol,
+            )
+        else:
+            auth_data = UsmUserData(host.user)
+    return auth_data
 
 
 class OptimizedMonitor:
@@ -204,7 +244,7 @@ class OptimizedMonitor:
         """SNMP otimizado com pool de engines - coleta todos os OIDs"""
         async with get_snmp_engine() as engine:
             try:
-                auth_data = CommunityData(self.hosts_status[ip].community, mpModel=1)
+                auth_data = select_snmp_authentication(self.hosts_status[ip])
                 oids_values = self.hosts_status[ip].oids.values() or []
                 oids_keys = list(self.hosts_status[ip].oids.keys())
                 result = {}
@@ -212,12 +252,9 @@ class OptimizedMonitor:
                 for idx, oid in enumerate(oids_values):
                     try:
                         error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
-                            get_cmd(
-                                engine, auth_data,
+                            get_cmd(engine, auth_data,
                                 await UdpTransportTarget.create((ip, 161), timeout=0.5, retries=0),
-                                ContextData(), ObjectType(ObjectIdentity(oid))
-                            ), timeout=1.0
-                        )
+                                ContextData(), ObjectType(ObjectIdentity(oid))), timeout=1.0)
 
                         if not (error_indication or error_status or error_index):
                             result[oids_keys[idx]] = str(var_binds[0][1])
@@ -241,13 +278,13 @@ class OptimizedMonitor:
 
         snmp_data = None
 
-        if is_alive:
+        if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
             # Se ping OK, tenta SNMP
             snmp_data = await self.fast_snmp_check(ip)
         else:
             # Se ping falhou, tenta TCP como fallback
             tcp_alive = await self.fast_tcp_check(ip)
-            if tcp_alive:
+            if tcp_alive and check_ip_for_snmp(self.hosts_status[ip]):
                 is_alive = True
                 # Se TCP OK, tenta SNMP também
                 snmp_data = await self.fast_snmp_check(ip)
@@ -276,9 +313,7 @@ class OptimizedMonitor:
                     if isinstance(result, Exception):
                         logger.error(f"Error checking {ips[i]}: {result}")
                         continue
-                    status_icon = "🟢" if result.is_alive else "🔴"
-                    snmp_icon = f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}" if result.snmp_data.get('sysDescr') else "❌"
-                    print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}")
+                    print_logs(result)
                     yield result
         except Exception as e:
             logger.error(f"Monitoring cycle error: {e}")
@@ -303,13 +338,13 @@ class OptimizedMonitor:
             elapsed = asyncio.get_event_loop().time() - start_time
             sleep_time = max(0.1, interval - elapsed)
 
-            logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
-
             # Executa a checagem da base de dados em paralelo ao sleep
             check_task = asyncio.create_task(self.check_hosts_db())
             await asyncio.sleep(sleep_time)
             await check_task  # Garante que a checagem terminou antes do próximo ciclo
-            logger.info(f"PASS Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
+
+            logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s")
+
 
             
 
