@@ -276,9 +276,8 @@ class OptimizedMonitor:
                     if isinstance(result, Exception):
                         logger.error(f"Error checking {ips[i]}: {result}")
                         continue
-
                     status_icon = "🟢" if result.is_alive else "🔴"
-                    snmp_icon = "📊" if result.snmp_data else "❌"
+                    snmp_icon = f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}" if result.snmp_data.get('sysDescr') else "❌"
                     print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}")
                     yield result
         except Exception as e:
