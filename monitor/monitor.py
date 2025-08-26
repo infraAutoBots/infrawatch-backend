@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 from dependencies import init_session
 from sqlalchemy.orm import Session
 from models import EndPoints, EndPointOIDs, EndPointsData
-from pprint import pp, pprint
 from pysnmp.hlapi.v3arch.asyncio import (get_cmd, SnmpEngine, UdpTransportTarget,
                                          CommunityData, ContextData, ObjectType,
                                          ObjectIdentity, UsmUserData, usmHMACSHAAuthProtocol,
@@ -71,13 +70,6 @@ async def get_snmp_engine():
         except asyncio.QueueFull:
             engine.transport_dispatcher.close_dispatcher()
 
-
-# OIDs otimizados (apenas os mais essenciais)
-ESSENTIAL_OIDS = {
-    "sysDescr": "1.3.6.1.2.1.1.1.0",
-    "uptime": "1.3.6.1.2.1.1.3.0",
-    "cpu": "1.3.6.1.4.1.2021.11.9.0"  # Apenas um OID por métrica
-}
 
 
 def print_logs(result):
@@ -402,9 +394,12 @@ class HyperFastMonitor(OptimizedMonitor):
                 snmp = "📊" if snmp_desc else "❌"
                 print(f"{status} {ip} {snmp}")
 
+# se for possivel pingar, e nao ser possivel pegar os dados via snmp
+# em um host que tem SNMP configurado  falha do host ++
+# 
 if __name__ == "__main__":
     import sys
-    
+
     mode = sys.argv[1] if len(sys.argv) > 1 else "hypers"
     # se estiver online  e nao cosegui pegar os dados 4 relatar
     # se estiver offline  relatar como offline

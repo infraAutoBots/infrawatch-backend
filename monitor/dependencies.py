@@ -4,12 +4,11 @@ from sqlalchemy.orm import sessionmaker
 
 
 def init_session():
-    """_summary_
+    """Initialize a new database session.
 
-    Yields:
+    Returns:
         _type_: _description_
     """
     Session = sessionmaker(bind=db)
     return Session()
-
 
