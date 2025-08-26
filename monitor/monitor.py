@@ -235,7 +235,7 @@ class OptimizedMonitor:
     async def check_single_host(self, host_status: HostStatus) -> HostStatus:
         """Verificação completa com controle de falhas consecutivas"""
         ip = host_status.ip
-        
+
         # Ping check
         ping_results = await self.fast_ping_check([ip])
         is_alive, rtt = ping_results.get(ip, (False, 0.0))
@@ -260,8 +260,8 @@ class OptimizedMonitor:
         elif is_alive and not snmp_data and check_ip_for_snmp(self.hosts_status[ip]):
             # Falha - incrementa contador
             # Verifica se houve coleta de dados recente antes de incrementar falha
-            has_recent_data = await self.has_recent_snmp_data(ip, days=7)
-            if has_recent_data:
+            # has_recent_data = await self.has_recent_snmp_data(ip, days=7)
+            # if has_recent_data:
                 # Se é possível pingar, não consegue pegar dados via SNMP
                 # em um host que tem SNMP configurado E já coletou dados recentemente
                 # = falha do host ++
