@@ -1,11 +1,13 @@
-import asyncio
-from pysnmp.hlapi.v3arch.asyncio import SnmpEngine
-import logging
 import os
+import logging
+import asyncio
 from dotenv import load_dotenv
+from pysnmp.hlapi.v3arch.asyncio import SnmpEngine
+
 
 
 load_dotenv()
+
 
 # Configuração de logging otimizada
 logging.basicConfig(
@@ -13,8 +15,10 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
+
 # Configuração de logging otimizada
 logger = logging.getLogger(__name__)
+
 
 # Pool melhorado de engines SNMP com auto-renovação
 class SNMPEnginePool:

@@ -1,6 +1,7 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import (create_engine, Column, Integer, String, Boolean,
+                        Text, DateTime, ForeignKey)
 
 
 
@@ -98,6 +99,7 @@ class EndPointOIDs(Base):
         self.memAvailReal = memAvailReal
         self.hrStorageSize = hrStorageSize
         self.hrStorageUsed = hrStorageUsed
+
 
 # executar a criacao dos metadados do banco de dados
 # alembic init alembic

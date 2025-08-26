@@ -1,20 +1,25 @@
+import os
 import asyncio
-from typing import Dict, List, Optional, Tuple
+
+from dotenv import load_dotenv
+from sqlalchemy.orm import Session
 from icmplib import async_multiping
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
-import os
 from contextlib import asynccontextmanager
+from typing import Dict, List, Optional, Tuple
+from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget,
+                                         ContextData, ObjectType, ObjectIdentity)
+
 from dependencies import init_session
-from sqlalchemy.orm import Session
 from models import EndPoints, EndPointsData
-from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget, ContextData,
-                                          ObjectType, ObjectIdentity)
-from utils import HostStatus, print_logs, get_HostStatus, check_ip_for_snmp, select_snmp_authentication
 from snmp_engine_pool import SNMPEnginePool, logger
+from utils import (HostStatus, print_logs, get_HostStatus,
+                   check_ip_for_snmp, select_snmp_authentication)
+
 
 
 load_dotenv()
+
 
 # Pool global renovado
 snmp_pool = SNMPEnginePool()
@@ -328,8 +333,7 @@ class OptimizedMonitor:
 
             logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s | Global failures: {self.global_failure_count}")
 
-
-            
+  
 
 # Versão ainda mais otimizada para casos extremos
 class HyperFastMonitor(OptimizedMonitor):
