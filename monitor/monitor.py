@@ -259,6 +259,7 @@ class OptimizedMonitor:
             self.hosts_status[ip].last_success = datetime.now()
         elif is_alive and not snmp_data and check_ip_for_snmp(self.hosts_status[ip]):
             # Falha - incrementa contador
+            # o host tem que ter SNMP configurado
             # Verifica se houve coleta de dados recente antes de incrementar falha
             # has_recent_data = await self.has_recent_snmp_data(ip, days=7)
             # if has_recent_data:
