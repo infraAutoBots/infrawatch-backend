@@ -189,7 +189,12 @@ Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai esc
 
     POSSIVEL SOLUCAO: depois de tentar fazer a requisicao
     10 e nao for possivel pagar os dados criar uma nova
-    engine de conexao
+    engine de conexao.
+
+    se for possivel pingar, e nao ser possivel pegar os dados via snmp
+    em um host que tem SNMP configurado  falha do host ++
+    e tambel se este host jater pegado dados recentemente
+
 
 Nota: seria interecante se na interface podece temum btn que diz
       que este enpoint ainda nao vai ser monitorado se vaiser monitorado
@@ -198,6 +203,7 @@ finaly:
     # Fazer os teste com dados e os teste sem dados no monitoramento
     # Ajustar a saida dos dados da ApI
     # dar no cloud para ajustar o codigo e otimizar
+
 
 
 5. ADD O MONITORAMENTO VIA WEBHOOK
