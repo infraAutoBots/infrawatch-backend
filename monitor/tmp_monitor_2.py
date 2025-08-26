@@ -1,20 +1,136 @@
 import asyncio
+import logging
+from tkinter import NO
 from typing import Dict, List, Optional, Tuple
+from unittest import result
 from icmplib import async_multiping
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 import os
+from dataclasses import dataclass, field
 from contextlib import asynccontextmanager
 from dependencies import init_session
 from sqlalchemy.orm import Session
-from models import EndPoints, EndPointsData
-from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget, ContextData,
-                                          ObjectType, ObjectIdentity)
-from utils import HostStatus, print_logs, get_HostStatus, check_ip_for_snmp, select_snmp_authentication
-from snmp_engine_pool import SNMPEnginePool, logger
-
+from models import EndPoints, EndPointOIDs, EndPointsData
+from pprint import pp, pprint
+from pysnmp.hlapi.v3arch.asyncio import (get_cmd, SnmpEngine, UdpTransportTarget,
+                                         CommunityData, ContextData, ObjectType,
+                                         ObjectIdentity, UsmUserData, usmHMACSHAAuthProtocol,
+                                         usmAesCfb128Protocol)
 
 load_dotenv()
+
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO")),
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class HostStatus:
+    _id: Optional[int] = None
+    ip: str = ""
+    is_alive: bool = False
+    interval: int = 0
+    version: str = ""
+    community: str = ""
+    port: Optional[int] = None
+    user: str = ""
+    authKey: str = ""
+    privKey: str = ""
+    webhook: str = ""
+    snmp_data: Dict[str, str] = None
+    oids: List[str] = None
+    last_updated: datetime = None
+    ping_rtt: float = 0.0
+    # NOVO: Contador de falhas consecutivas
+    consecutive_failures: int = 0
+    last_success: Optional[datetime] = None
+
+
+# Pool melhorado de engines SNMP com auto-renovação
+class SNMPEnginePool:
+    def __init__(self, max_size: int = 10):
+        self.max_size = max_size
+        self.engines = asyncio.Queue(maxsize=max_size)
+        self.engines_created = 0
+        self.lock = asyncio.Lock()
+        # Rastreamento de engines problemáticas
+        self.faulty_engines = set()
+        
+    async def get_engine(self, force_new: bool = False):
+        """Obtém uma engine do pool ou cria uma nova"""
+        async with self.lock:
+            if force_new:
+                return self._create_new_engine()
+                
+            try:
+                engine = self.engines.get_nowait()
+                # Verifica se a engine não está marcada como defeituosa
+                if id(engine) in self.faulty_engines:
+                    await self._dispose_engine(engine)
+                    return await self._get_or_create_engine()
+                return engine
+            except asyncio.QueueEmpty:
+                return await self._get_or_create_engine()
+    
+    async def _get_or_create_engine(self):
+        """Obtém ou cria uma engine"""
+        if self.engines_created < self.max_size:
+            return self._create_new_engine()
+        else:
+            # Espera por uma engine disponível
+            engine = await self.engines.get()
+            if id(engine) in self.faulty_engines:
+                await self._dispose_engine(engine)
+                return self._create_new_engine()
+            return engine
+    
+    def _create_new_engine(self):
+        """Cria uma nova engine"""
+        engine = SnmpEngine()
+        self.engines_created += 1
+        logger.debug(f"Nova SNMP engine criada. Total: {self.engines_created}")
+        return engine
+    
+    async def return_engine(self, engine, is_faulty: bool = False):
+        """Retorna uma engine ao pool"""
+        async with self.lock:
+            if is_faulty:
+                self.faulty_engines.add(id(engine))
+                await self._dispose_engine(engine)
+                logger.debug(f"Engine marcada como defeituosa e descartada")
+            else:
+                try:
+                    self.engines.put_nowait(engine)
+                except asyncio.QueueFull:
+                    await self._dispose_engine(engine)
+    
+    async def _dispose_engine(self, engine):
+        """Descarta uma engine defeituosa"""
+        try:
+            if hasattr(engine, 'transport_dispatcher'):
+                engine.transport_dispatcher.close_dispatcher()
+            self.engines_created -= 1
+            self.faulty_engines.discard(id(engine))
+        except Exception as e:
+            logger.error(f"Erro ao descartar engine: {e}")
+    
+    async def refresh_all_engines(self):
+        """Força a renovação de todas as engines"""
+        async with self.lock:
+            logger.info("Renovando todas as engines SNMP...")
+            # Marca todas as engines como defeituosas
+            while not self.engines.empty():
+                try:
+                    engine = self.engines.get_nowait()
+                    await self._dispose_engine(engine)
+                except asyncio.QueueEmpty:
+                    break
+            self.faulty_engines.clear()
+            logger.info("Todas as engines SNMP foram renovadas")
+
 
 # Pool global renovado
 snmp_pool = SNMPEnginePool()
@@ -38,8 +154,76 @@ async def get_snmp_engine(force_new: bool = False):
         await snmp_pool.return_engine(engine, is_faulty)
 
 
+def print_logs(result):
+    status_icon = "🟢" if result.is_alive else "🔴"
+    failure_info = f" (Falhas: {result.consecutive_failures})" if result.consecutive_failures > 0 else ""
+    snmp_icon = f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}" if result.snmp_data and result.snmp_data.get('sysDescr') else "❌"
+    print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}{failure_info}")
 
-class OptimizedMonitor:
+
+def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
+    oids = {}
+    oids_data = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == row.id).first()
+    if oids_data:
+        oids = {
+            "sysDescr": oids_data.sysDescr,
+            "sysName": oids_data.sysName,
+            "sysUpTime": oids_data.sysUpTime,
+            "hrProcessorLoad": oids_data.hrProcessorLoad,
+            "memTotalReal": oids_data.memTotalReal,
+            "memAvailReal": oids_data.memAvailReal,
+            "hrStorageSize": oids_data.hrStorageSize,
+            "hrStorageUsed": oids_data.hrStorageUsed
+        }
+    return HostStatus(
+        _id=row.id,
+        ip=row.ip,
+        is_alive=False,
+        interval=row.interval,
+        version=row.version,
+        community=row.community,
+        port=row.port,
+        user=row.user,
+        authKey=row.authKey,
+        privKey=row.privKey,
+        webhook=row.webhook,
+        oids=oids
+    )
+
+
+def check_ip_for_snmp(host: HostStatus):
+    if (host.ip and host.interval and not host.port 
+        and not host.version and not host.community
+        and not host.user and not host.authKey 
+        and not host.privKey):
+        return False
+    return True 
+
+
+def select_snmp_authentication(host: HostStatus):
+    if host.version in ["1", "2c"]:
+        auth_data = CommunityData(host.community, mpModel=0 if host.version == "1" else 1)
+    else:
+        if host.authKey and host.privKey:
+            auth_data = UsmUserData(
+                userName=host.user,
+                authKey=host.authKey,
+                privKey=host.privKey,
+                authProtocol=usmHMACSHAAuthProtocol,
+                privProtocol=usmAesCfb128Protocol,
+            )
+        elif host.authKey:
+            auth_data = UsmUserData(
+                userName=host.user,
+                authKey=host.authKey,
+                authProtocol=usmHMACSHAAuthProtocol,
+            )
+        else:
+            auth_data = UsmUserData(host.user)
+    return auth_data
+
+
+class ImprovedOptimizedMonitor:
     def __init__(self, session: Session = init_session()):
         self.hosts_status: Dict[str, HostStatus] = {}
         self.lock = asyncio.Lock()
@@ -100,43 +284,6 @@ class OptimizedMonitor:
                     self.hosts_status[ip] = new_hosts[ip]
         finally:
             session.close()
-
-    async def has_recent_snmp_data(self, ip: str, days: int = 7) -> bool:
-        """
-        Verifica se houve coleta de dados SNMP nas últimas X dias.
-        Não interrompe o fluxo de execução em caso de erro.
-        """
-        try:
-            session = init_session()
-            try:
-                # Busca o endpoint
-                endpoint = session.query(EndPoints).filter(EndPoints.ip == ip).first()
-                if not endpoint:
-                    return False
-                
-                # Calcula data limite (X dias atrás)
-                cutoff_date = datetime.now() - timedelta(days=days)
-                
-                # Verifica se existe algum dado coletado recentemente
-                recent_data = session.query(EndPointsData).filter(
-                    EndPointsData.id_end_point == endpoint.id,
-                    EndPointsData.last_updated >= cutoff_date,
-                    # Verifica se pelo menos um campo SNMP não está vazio/None
-                    (EndPointsData.sysDescr.isnot(None) |
-                     EndPointsData.sysName.isnot(None) |
-                     EndPointsData.sysUpTime.isnot(None) |
-                     EndPointsData.hrProcessorLoad.isnot(None))
-                ).first()
-                
-                return recent_data is not None
-                
-            finally:
-                session.close()
-                
-        except Exception as e:
-            # Log o erro mas não interrompe o fluxo
-            logger.debug(f"Erro ao verificar dados recentes para {ip}: {e}")
-            return False
 
     async def fast_ping_check(self, ips: List[str]) -> Dict[str, Tuple[bool, float]]:
         try:
@@ -252,27 +399,22 @@ class OptimizedMonitor:
             # Sucesso - reseta contador
             self.hosts_status[ip].consecutive_failures = 0
             self.hosts_status[ip].last_success = datetime.now()
-        elif is_alive and not snmp_data and check_ip_for_snmp(self.hosts_status[ip]):
+        else:
             # Falha - incrementa contador
-            # Verifica se houve coleta de dados recente antes de incrementar falha
-            has_recent_data = await self.has_recent_snmp_data(ip, days=7)
-            if has_recent_data:
-                # Se é possível pingar, não consegue pegar dados via SNMP
-                # em um host que tem SNMP configurado E já coletou dados recentemente
-                # = falha do host ++
-                self.hosts_status[ip].consecutive_failures += 1
-                self.global_failure_count += 1
+            self.hosts_status[ip].consecutive_failures += 1
+            self.global_failure_count += 1
 
         self.hosts_status[ip].is_alive = is_alive
         self.hosts_status[ip].snmp_data = snmp_data
         self.hosts_status[ip].last_updated = datetime.now()
         self.hosts_status[ip].ping_rtt = rtt
-
+        
         # Verifica se precisa renovar engines globalmente
         if self.global_failure_count >= self.engine_refresh_threshold:
+            logger.warning("Muitas falhas detectadas. Renovando pool de engines SNMP...")
             await snmp_pool.refresh_all_engines()
             self.global_failure_count = 0
-
+        
         return self.hosts_status[ip]
     
     async def monitoring_cycle(self):
@@ -329,76 +471,11 @@ class OptimizedMonitor:
             logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s | Global failures: {self.global_failure_count}")
 
 
-            
-
-# Versão ainda mais otimizada para casos extremos
-class HyperFastMonitor(OptimizedMonitor):
-    """Versão para quando você precisa de velocidade máxima"""
-
-    async def monitoring_cycle(self):
-        await self.hyper_monitoring_cycle()
-
-    async def hyper_check(self, ip: str) -> Tuple[bool, Optional[str]]:
-        """Verificação híbrida ultra-rápida"""
-        # Ping e SNMP em paralelo
-        ping_task = self.fast_ping_check([ip])
-        snmp_task = self.fast_snmp_check(ip)
-        
-        ping_result, snmp_result = await asyncio.gather(
-            ping_task, snmp_task, return_exceptions=True
-        )
-        
-        is_alive_ping = False
-        if not isinstance(ping_result, Exception):
-            is_alive_ping = ping_result.get(ip, (False, 0.0))[0]
-        
-        has_snmp = not isinstance(snmp_result, Exception) and snmp_result
-        
-        # Se qualquer um funcionar, consideramos vivo
-        is_alive = is_alive_ping or has_snmp
-        snmp_desc = snmp_result.get('sysDescr', '') if has_snmp else None
-        
-        return is_alive, snmp_desc
-    
-    async def hyper_monitoring_cycle(self):
-        """Ciclo de monitoramento hiper-otimizado"""
-        ips = list(self.hosts_status.keys())
-        tasks = [self.hyper_check(ip) for ip in ips]
-        
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        async with self.lock:
-            for i, result in enumerate(results):
-                ip = ips[i]
-                if isinstance(result, Exception):
-                    continue
-                
-                is_alive, snmp_desc = result
-                self.hosts_status[ip] = HostStatus(
-                    ip=ip,
-                    is_alive=is_alive,
-                    snmp_data={'sysDescr': snmp_desc} if snmp_desc else {},
-                    last_updated=datetime.now()
-                )
-                
-                status = "🟢" if is_alive else "🔴"
-                snmp = "📊" if snmp_desc else "❌"
-                print(f"{status} {ip} {snmp}")
-
-
-
 if __name__ == "__main__":
     import sys
-
-    mode = sys.argv[1] if len(sys.argv) > 1 else "hypers"
-    # se estiver online  e nao cosegui pegar os dados 4 relatar
-    # se estiver offline  relatar como offline
-
-    if mode == "hyper":
-        print("🏃‍♂️ Modo HYPER-RÁPIDO ativado!")
-        monitor = HyperFastMonitor()
-        asyncio.run(monitor.run_monitoring(interval=30.0))
-    else:
-        print("⚡ Modo OTIMIZADO ativado!")
-        monitor = OptimizedMonitor()
-        asyncio.run(monitor.run_monitoring(interval=30.0))
+    
+    mode = sys.argv[1] if len(sys.argv) > 1 else "improved"
+    
+    print("⚡ Modo OTIMIZADO com Auto-Reconexão ativado!")
+    monitor = ImprovedOptimizedMonitor()
+    asyncio.run(monitor.run_monitoring(interval=30.0))
