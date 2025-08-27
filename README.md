@@ -11,6 +11,11 @@ O **InfraWatch-backend** tem como objetivos principais:
 - Facilitar o monitoramento ativo de infraestrutura com notificações e alertas.
 - Escalabilidade e facilidade de integração com outros sistemas e dashboards.
 
+## Verção do python
+```bash
+Python 3.12.3
+```
+
 ## Instalação
 
 ### 1. Clone o repositório
