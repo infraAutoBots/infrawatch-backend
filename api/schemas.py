@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
@@ -85,45 +85,11 @@ class AddEndPointRequest(BaseModel):
         from_attributes = True
 
 class LoginSchemas(BaseModel):
-    email: EmailStr = Field(..., description="Email do usuário")
-    password: str = Field(..., min_length=6, description="Senha do usuário")
+    email: str
+    password: str
 
     class Config:
         from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "email": "usuario@exemplo.com",
-                "password": "senha123"
-            }
-        }
-
-
-class TokenResponse(BaseModel):
-    access_token: str = Field(..., description="Token de acesso JWT")
-    refresh_token: Optional[str] = Field(None, description="Token de refresh (apenas em login completo)")
-    token_type: str = Field(default="Bearer", description="Tipo do token")
-    expires_in: int = Field(..., description="Tempo de expiração em segundos")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "token_type": "Bearer",
-                "expires_in": 1800
-            }
-        }
-
-
-class MessageResponse(BaseModel):
-    message: str = Field(..., description="Mensagem de resposta")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Operação realizada com sucesso"
-            }
-        }
 
 class ResponseEndPointsDataSchemas(BaseModel):
     status: bool
