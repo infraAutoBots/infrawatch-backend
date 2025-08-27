@@ -42,10 +42,8 @@ async def login(login_schemas:LoginSchemas, session: Session = Depends(init_sess
     """
 
     user = session.query(Users).filter(Users.email == login_schemas.email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    elif not bcrypt_context.verify(login_schemas.password, user.password):
-        raise HTTPException(status_code=400, detail="Invalid password")
+    if not user or not bcrypt_context.verify(login_schemas.password, user.password):
+        raise HTTPException(status_code=400, detail="Credenciais inválidas")
     else:
         access_token = create_token(user.id)
         refresh_token = create_token(user.id, timeout=timedelta(days=7))
@@ -68,10 +66,8 @@ async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: 
     """
 
     user = session.query(Users).filter(Users.email == form_data.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    elif not bcrypt_context.verify(form_data.password, user.password):
-        raise HTTPException(status_code=400, detail="Invalid password")
+    if not user or not bcrypt_context.verify(form_data.password, user.password):
+        raise HTTPException(status_code=400, detail="Credenciais inválidas")
     else:
         access_token = create_token(user.id, timeout=timedelta(days=30))
         return {
