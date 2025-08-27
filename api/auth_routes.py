@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from models import Users
 from dependencies import init_session, verify_token
 from encryption import SECRET_KEY, bcrypt_context, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from schemas import UserSchemas, LoginSchemas
+from schemas import LoginSchemas
 from sqlalchemy.orm import Session
 from jose import jwt
 from datetime import datetime, timedelta, timezone
@@ -78,41 +78,6 @@ async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: 
             "access_token": access_token,
             "token_type": "Bearer"
             }
-
-
-@auth_router.post("/signup") # criar conta, add para criar conta tem que ser admin
-async def signup(user_schemas: UserSchemas, logged_user: Users = Depends(verify_token), session: Session = Depends(init_session)):
-    """_summary_
-
-    Args:
-        user_schemas (UserSchemas): _description_
-        session (Session, optional): _description_. Defaults to Depends(init_session).
-
-    Raises:
-        HTTPException: _description_
-        HTTPException: _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    if logged_user.access_level != 'ADMIN':
-        raise HTTPException(status_code=403, detail="Operation not permitted")
-
-    user = session.query(Users).filter(Users.email == user_schemas.email).first()
-    if user_schemas.access_level not in ['ADMIN', 'MONITOR', 'VIEWER']:
-        raise HTTPException(status_code=400, detail="Invalid access level")
-    elif user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    else:
-        encrypted_password = bcrypt_context.hash(user_schemas.password)
-        new_user = Users(user_schemas.name, user_schemas.email,
-                         encrypted_password, user_schemas.state,
-                         user_schemas.last_login, user_schemas.access_level)
-        session.add(new_user)
-        session.commit()
-        return {"msg" : f"{new_user.name} cadastrado com sucesso"}
-
 
 @auth_router.get("/refresh")
 async def refresh_token(user: Users = Depends(verify_token)):
