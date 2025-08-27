@@ -110,6 +110,7 @@ class UserResponseSchemas(BaseModel):
     name: str
     email: str
     access_level: str
+    url: Optional[str] = None
     state: bool
     last_login: Optional[datetime] = None
     created_at: Optional[datetime] = None
@@ -123,6 +124,7 @@ class UserCreateSchemas(BaseModel):
     email: str
     password: str
     access_level: str
+    url: Optional[str] = None
     state: Optional[bool] = True
 
     class Config:
@@ -133,6 +135,7 @@ class UserUpdateSchemas(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     access_level: Optional[str] = None
+    url: Optional[str] = None
     state: Optional[bool] = None
     password: Optional[str] = None
 

@@ -31,16 +31,18 @@ class Users(Base):
     state = Column("state", Boolean)
     last_login = Column("last_login", DateTime)
     access_level = Column("access_level", String) # ChoiceType(choices=ACCESS_LEVEL)
+    url = Column("url", String)
     created_at = Column("created_at", DateTime, default=func.now())
     updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
 
-    def __init__(self, name, email, password, state, last_login, access_level):
+    def __init__(self, name, email, password, state, last_login, access_level, url):
         self.name = name
         self.email = email
         self.password = password
         self.state = state
         self.last_login = last_login
         self.access_level = access_level
+        self.url = url
         self.created_at = func.now()
         self.updated_at = func.now()
 

@@ -153,7 +153,8 @@ async def create_user(
         password=hashed_password,
         state=user_data.state,
         last_login=None,
-        access_level=user_data.access_level
+        access_level=user_data.access_level,
+        url=user_data.url
     )
     
     session.add(new_user)
