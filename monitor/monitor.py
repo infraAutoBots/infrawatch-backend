@@ -16,7 +16,7 @@ from snmp_engine_pool import SNMPEnginePool, logger
 from utils import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication)
 
-
+from pprint import pprint
 
 load_dotenv()
 
@@ -106,43 +106,6 @@ class OptimizedMonitor:
         finally:
             session.close()
 
-    async def has_recent_snmp_data(self, ip: str, days: int = 7) -> bool:
-        """
-        Verifica se houve coleta de dados SNMP nas últimas X dias.
-        Não interrompe o fluxo de execução em caso de erro.
-        """
-        try:
-            session = init_session()
-            try:
-                # Busca o endpoint
-                endpoint = session.query(EndPoints).filter(EndPoints.ip == ip).first()
-                if not endpoint:
-                    return False
-                
-                # Calcula data limite (X dias atrás)
-                cutoff_date = datetime.now() - timedelta(days=days)
-                
-                # Verifica se existe algum dado coletado recentemente
-                recent_data = session.query(EndPointsData).filter(
-                    EndPointsData.id_end_point == endpoint.id,
-                    EndPointsData.last_updated >= cutoff_date,
-                    # Verifica se pelo menos um campo SNMP não está vazio/None
-                    (EndPointsData.sysDescr.isnot(None) |
-                     EndPointsData.sysName.isnot(None) |
-                     EndPointsData.sysUpTime.isnot(None) |
-                     EndPointsData.hrProcessorLoad.isnot(None))
-                ).first()
-                
-                return recent_data is not None
-                
-            finally:
-                session.close()
-                
-        except Exception as e:
-            # Log o erro mas não interrompe o fluxo
-            logger.debug(f"Erro ao verificar dados recentes para {ip}: {e}")
-            return False
-
     async def fast_ping_check(self, ips: List[str]) -> Dict[str, Tuple[bool, float]]:
         try:
             hosts = await async_multiping(
@@ -231,7 +194,7 @@ class OptimizedMonitor:
                     raise  # Re-levanta para trigger do retry
             
             return result
-    
+
     async def check_single_host(self, host_status: HostStatus) -> HostStatus:
         """Verificação completa com controle de falhas consecutivas"""
         ip = host_status.ip
@@ -253,21 +216,13 @@ class OptimizedMonitor:
                 snmp_data = await self.fast_snmp_check_with_retry(ip)
     
         # Atualiza contadores de falha
-        if is_alive and snmp_data and any(snmp_data.values()):
+        if is_alive and check_ip_for_snmp(self.hosts_status[ip]) and snmp_data and any(snmp_data.values()):
             # Sucesso - reseta contador
             self.hosts_status[ip].consecutive_failures = 0
             self.hosts_status[ip].last_success = datetime.now()
-        elif is_alive and not snmp_data and check_ip_for_snmp(self.hosts_status[ip]):
-            # Falha - incrementa contador
-            # o host tem que ter SNMP configurado
-            # Verifica se houve coleta de dados recente antes de incrementar falha
-            # has_recent_data = await self.has_recent_snmp_data(ip, days=7)
-            # if has_recent_data:
-                # Se é possível pingar, não consegue pegar dados via SNMP
-                # em um host que tem SNMP configurado E já coletou dados recentemente
-                # = falha do host ++
-                self.hosts_status[ip].consecutive_failures += 1
-                self.global_failure_count += 1
+        elif is_alive and check_ip_for_snmp(self.hosts_status[ip]) and not any(snmp_data.values()):
+            self.hosts_status[ip].consecutive_failures += 1
+            self.global_failure_count += 1
 
         self.hosts_status[ip].is_alive = is_alive
         self.hosts_status[ip].snmp_data = snmp_data
@@ -276,11 +231,12 @@ class OptimizedMonitor:
 
         # Verifica se precisa renovar engines globalmente
         if self.global_failure_count >= self.engine_refresh_threshold:
+            logger.info("Renovando todas as engines SNMP devido a falhas globais...")
             await snmp_pool.refresh_all_engines()
             self.global_failure_count = 0
 
         return self.hosts_status[ip]
-    
+
     async def monitoring_cycle(self):
         """Ciclo de monitoramento com melhor handling de falhas"""
         ips = list(self.hosts_status.keys())

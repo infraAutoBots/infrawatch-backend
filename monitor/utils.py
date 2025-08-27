@@ -33,10 +33,11 @@ class HostStatus:
 
 
 
-def print_logs(result: HostStatus):
+def print_logs(result):
     status_icon = "🟢" if result.is_alive else "🔴"
+    failure_info = f" (Falhas: {result.consecutive_failures})" if result.consecutive_failures > 0 else ""
     snmp_icon = f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}" if result.snmp_data and result.snmp_data.get('sysDescr') else "❌"
-    print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}")
+    print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}{failure_info}")
 
 
 def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
