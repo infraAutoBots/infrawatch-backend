@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, EmailStr
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -99,6 +99,72 @@ class ResponseEndPointsDataSchemas(BaseModel):
     uptime: Optional[str]
     storage: Optional[str]
     last_updated: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+# Schemas adicionais para usuários
+class UserResponseSchemas(BaseModel):
+    id: int
+    name: str
+    email: str
+    access_level: str
+    state: bool
+    last_login: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UserCreateSchemas(BaseModel):
+    name: str
+    email: str
+    password: str
+    access_level: str
+    state: Optional[bool] = True
+
+    class Config:
+        from_attributes = True
+
+
+class UserUpdateSchemas(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    access_level: Optional[str] = None
+    state: Optional[bool] = None
+    password: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UserStatusUpdateSchemas(BaseModel):
+    state: bool
+
+    class Config:
+        from_attributes = True
+
+
+class UserStatsSchemas(BaseModel):
+    total_users: int
+    admins: int
+    monitors: int
+    viewers: int
+    active_users: int
+    inactive_users: int
+
+    class Config:
+        from_attributes = True
+
+
+class UserListResponse(BaseModel):
+    users: List[UserResponseSchemas]
+    total: int
+    page: int
+    pages: int
+    stats: UserStatsSchemas
 
     class Config:
         from_attributes = True
