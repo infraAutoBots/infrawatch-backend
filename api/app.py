@@ -6,7 +6,11 @@ from monitor_routes import monitor_router
 
 
 
-app = FastAPI()
+app = FastAPI(
+    title="API de Monitoramento SNMP",
+    description="API que gerencia dispositivos SNMP e coleta métricas em tempo real.",
+    version="2.0.1"
+)
 
 
 app.include_router(auth_router)
