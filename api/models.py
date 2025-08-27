@@ -1,6 +1,7 @@
 import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.sql import func
 
 
 
@@ -30,6 +31,8 @@ class Users(Base):
     state = Column("state", Boolean)
     last_login = Column("last_login", DateTime)
     access_level = Column("access_level", String) # ChoiceType(choices=ACCESS_LEVEL)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
 
     def __init__(self, name, email, password, state, last_login, access_level):
         self.name = name
@@ -38,6 +41,8 @@ class Users(Base):
         self.state = state
         self.last_login = last_login
         self.access_level = access_level
+        self.created_at = func.now()
+        self.updated_at = func.now()
 
 
 class EndPoints(Base):
