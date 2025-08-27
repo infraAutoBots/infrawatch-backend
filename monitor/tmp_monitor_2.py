@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from tkinter import NO
 from typing import Dict, List, Optional, Tuple
 from unittest import result
 from icmplib import async_multiping

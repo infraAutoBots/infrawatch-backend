@@ -233,6 +233,7 @@ class OptimizedMonitor:
         if self.global_failure_count >= self.engine_refresh_threshold:
             logger.info("Renovando todas as engines SNMP devido a falhas globais...")
             await snmp_pool.refresh_all_engines()
+            self.hosts_status[ip].consecutive_failures = 0
             self.global_failure_count = 0
 
         return self.hosts_status[ip]
