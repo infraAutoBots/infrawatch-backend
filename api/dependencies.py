@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import sessionmaker, Session
 from jose import jwt, JWTError
 from typing import Generator
+from datetime import datetime, timezone
 from models import db, Users
 from encryption import SECRET_KEY, ALGORITHM, oauth2_schema
 
@@ -39,9 +40,12 @@ def verify_token(token: str = Depends(oauth2_schema), session: Session = Depends
         if not id_user:
             raise HTTPException(status_code=401, detail="Token inválido: sub ausente")
         if exp is not None:
-            from datetime import datetime, timezone
+            try:
+                exp_float = float(exp)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=401, detail="Token inválido: campo exp malformado")
             now = datetime.now(timezone.utc).timestamp()
-            if now > float(exp):
+            if now > exp_float:
                 raise HTTPException(status_code=401, detail="Token expirado. Faça login novamente.")
     except JWTError:
         raise HTTPException(status_code=401, detail="Acesso negado: token inválido")

@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from jose import jwt
@@ -28,7 +27,8 @@ def create_token(id_user: int, timeout: Optional[timedelta] = None, token_type: 
     if timeout is None:
         timeout = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     expiration_date = datetime.now(timezone.utc) + timeout
-    info = {"sub": str(id_user), "exp": expiration_date, "type": token_type}
+    exp_timestamp = expiration_date.timestamp()
+    info = {"sub": str(id_user), "exp": exp_timestamp, "type": token_type}
     token = jwt.encode(info, SECRET_KEY, ALGORITHM)
     return token
 
