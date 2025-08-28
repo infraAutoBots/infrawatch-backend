@@ -14,7 +14,11 @@ from schemas import LoginSchemas
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def create_token(id_user: int, timeout: Optional[timedelta] = None, token_type: str = "access") -> str:
+def create_token(
+    id_user: int,
+    timeout: Optional[timedelta] = None,
+    token_type: str = "access"
+) -> str:
     """
     Cria um token JWT para um usuário.
     Args:
@@ -34,11 +38,16 @@ def create_token(id_user: int, timeout: Optional[timedelta] = None, token_type: 
 
 
 
-def _authenticate_user(email: str, password: str, session: Session) -> Optional[Users]:
+def _authenticate_user(
+    email: str,
+    password: str,
+    session: Session
+) -> Optional[Users]:
     user = session.query(Users).filter(Users.email == email).first()
     if user and bcrypt_context.verify(password, user.password):
         return user
     return None
+
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
 async def login(login_schemas: LoginSchemas, session: Session = Depends(init_session)):
@@ -56,8 +65,12 @@ async def login(login_schemas: LoginSchemas, session: Session = Depends(init_ses
         "token_type": "Bearer"
     }
 
+
 @auth_router.post("/login-form", status_code=status.HTTP_200_OK)
-async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(init_session)):
+async def login_form(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(init_session)
+):
     """
     Realiza o login de um usuário via formulário.
     """
@@ -69,6 +82,7 @@ async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: 
         "access_token": access_token,
         "token_type": "Bearer"
     }
+
 
 @auth_router.get("/refresh", status_code=status.HTTP_200_OK)
 async def refresh_token(user: Users = Depends(verify_token)):
