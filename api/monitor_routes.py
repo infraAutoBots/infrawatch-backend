@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from dependencies import init_session, verify_token
 from sqlalchemy.orm import Session
