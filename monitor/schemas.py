@@ -14,7 +14,6 @@ class EndPointSchemas(BaseModel):
     user: str
     authKey: str
     privKey: str
-    webhook: str
 
     class Config:
         from_attributes = True

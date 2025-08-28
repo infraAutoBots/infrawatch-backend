@@ -22,7 +22,6 @@ class HostStatus:
     user: str = ""
     authKey: str = ""
     privKey: str = ""
-    webhook: str = ""
     snmp_data: Dict[str, str] = None
     oids: List[str] = None
     last_updated: datetime = None
@@ -65,7 +64,6 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
         user=row.user,
         authKey=row.authKey,
         privKey=row.privKey,
-        webhook=row.webhook,
         oids=oids
     )
 
