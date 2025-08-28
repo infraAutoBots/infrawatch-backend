@@ -16,7 +16,7 @@ from snmp_engine_pool import SNMPEnginePool, logger
 from utils import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication)
 
-from pprint import pprint
+
 
 load_dotenv()
 
