@@ -177,7 +177,7 @@ Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai esc
 
 3.1 ADD MONITORAMENTO COM A VERSAO 3 DO SNMP  V/
 
-4.  POBLEMA:
+4.  POBLEMA: V/
     quando o simulador snmp e fechado todos teste snmp falha
     quando voltamos a abrir o simulador e ativemos os endpoints
     snmp o codigo de monitoramento nao consegue funcionar, para
@@ -199,40 +199,46 @@ Nota: Os dados seram opcionalizados pelo front. para saber se vai add ou vai esc
 Nota: seria interecante se na interface podece temum btn que diz
       que este enpoint ainda nao vai ser monitorado se vaiser monitorado
 
+
+
 finaly:
     # Fazer os teste com dados e os teste sem dados no monitoramento
     # Ajustar a saida dos dados da ApI
     # dar no cloud para ajustar o codigo e otimizar
 
 
+#####################################################################################
+CONVERTER  O MONITORAMENTO
+1. remover o acesso ao bamco de dados
+2. mudar o pegar os dados do banco de dados para pagar dados via request (fazer uma requisicao)
+3. mudar salvar dados no banco de dados para emviara os dados via (request POTS)
+4. Add a rota que vai receber os dados de acordo com ip e salvar na db
+
+
+
 
 5. ADD O MONITORAMENTO VIA WEBHOOK
-
-
 6. ADD O MONITORAMENTO VIA API
-
-
 7. DOKERINZANDO A APLICACAO 
-
-
 8. AUTOMATIZANDO TESTE
+9. FAZER DEPLOY
+10. ATT
 
 
-9 FAZER DEPLOY
-
-
-10 ATT
 
 {
     "ip": "127.0.0.1",
     "interval": 30,
-    "version": "2c",
-    "community": "public",
     "port": 161,
-    "user": "",
-    "authKey": "",
-    "privKey": "",
-    "webhook": "",
+    "version": "2c",
+
+    if ("version" in [1 | 2c])
+        "community": "public",
+    else ("version" in 3):
+        "user": "",
+        "authKey": "",
+        "privKey": "",
+
     "sysDescr": "1.3.6.1.2.1.1.1.0",
     "sysName": "1.3.6.1.2.1.1.5.0",
     "sysUpTime": "1.3.6.1.2.1.1.3.0",
@@ -243,4 +249,5 @@ finaly:
     "hrStorageUsed": "1.3.6.1.2.1.25.2.3.1.6"
 }
 
-
+token_acesso  fdsjkfajsdlfjasdfasljdhfjaklsdhfljkfgslhgjhfdlgd expire (2020-03-12)
+key - acess toke webhook

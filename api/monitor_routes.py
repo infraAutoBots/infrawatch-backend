@@ -82,6 +82,7 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
         endpoint_data = session.query(EndPointsData).filter(EndPointsData.id_end_point == data.id).all()
         endpoint_data_serialized = [EndPointsDataSchemas.model_validate(d) for d in endpoint_data]
         list_data.append({"endpoint": data.ip, "data": endpoint_data_serialized})
+    
     return {"success": True, "data": list_data}
 
 
@@ -100,8 +101,7 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
         list_data.append({"endpoint": data.ip, "data": last_data_serialize})
     return {"success": True, "data": list_data}
 
-
-
+ 
 @monitor_router.get("/{ip}", response_model=Optional[EndPointsDataSchemas])
 async def get_ip_info(
     ip: str,
