@@ -16,6 +16,10 @@ Base = declarative_base()
 
 #criar classes/tabela do seu banco de dados
 class Users(Base):
+    """
+    Modelo ORM para a tabela de usuários do sistema.
+    Representa um usuário com informações de autenticação, estado e permissões.
+    """
     __tablename__ = 'users'
 
     # ACCESS_LEVEL = (
@@ -36,6 +40,17 @@ class Users(Base):
     updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
 
     def __init__(self, name, email, password, state, last_login, access_level, url):
+        """
+        Inicializa um novo usuário.
+        Args:
+            name (str): Nome do usuário.
+            email (str): Email do usuário.
+            password (str): Senha criptografada.
+            state (bool): Estado ativo/inativo.
+            last_login (datetime): Último login.
+            access_level (str): Nível de acesso (ADMIN, MONITOR, VIEWER).
+            url (str): URL do usuário.
+        """
         self.name = name
         self.email = email
         self.password = password
@@ -48,6 +63,10 @@ class Users(Base):
 
 
 class EndPoints(Base):
+    """
+    Modelo ORM para a tabela de endpoints monitorados.
+    Representa um dispositivo ou serviço monitorado pelo sistema.
+    """
     __tablename__ = 'endpoints'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -65,6 +84,20 @@ class EndPoints(Base):
     end_points_oids = relationship("EndPointOIDs", cascade="all, delete")
 
     def __init__(self, ip, interval, version, community, port, user, authKey, privKey, webhook, id_user):
+        """
+        Inicializa um novo endpoint monitorado.
+        Args:
+            ip (str): Endereço IP ou domínio.
+            interval (int): Intervalo de coleta.
+            version (str): Versão SNMP.
+            community (str): Comunidade SNMP.
+            port (int): Porta SNMP.
+            user (str): Usuário SNMPv3.
+            authKey (str): Chave de autenticação SNMPv3.
+            privKey (str): Chave privada SNMPv3.
+            webhook (str): URL de webhook.
+            id_user (int): ID do usuário proprietário.
+        """
         self.ip = ip
         self.interval = interval
         self.version = version
@@ -78,6 +111,10 @@ class EndPoints(Base):
 
 
 class EndPointsData(Base):
+    """
+    Modelo ORM para os dados coletados dos endpoints.
+    Armazena informações de status e métricas coletadas.
+    """
     __tablename__ = 'endpoints_data'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -95,6 +132,21 @@ class EndPointsData(Base):
     # resposta
 
     def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, last_updated):
+        """
+        Inicializa um novo registro de dados coletados de endpoint.
+        Args:
+            id_end_point (int): ID do endpoint.
+            status (bool): Status do endpoint.
+            sysDescr (str): Descrição do sistema.
+            sysName (str): Nome do sistema.
+            sysUpTime (str): Tempo de atividade.
+            hrProcessorLoad (str): Carga do processador.
+            memTotalReal (str): Memória total.
+            memAvailReal (str): Memória disponível.
+            hrStorageSize (str): Tamanho do armazenamento.
+            hrStorageUsed (str): Armazenamento usado.
+            last_updated (datetime): Data da última atualização.
+        """
         self.id_end_point = id_end_point
         self.status = status
         self.sysDescr = sysDescr
@@ -109,6 +161,10 @@ class EndPointsData(Base):
 
 
 class EndPointOIDs(Base):
+    """
+    Modelo ORM para os OIDs monitorados de cada endpoint.
+    Armazena os identificadores SNMP de interesse para cada endpoint.
+    """
     __tablename__ = 'endpoints_oids'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -123,6 +179,19 @@ class EndPointOIDs(Base):
     hrStorageUsed = Column("hrStorageUsed", String)
 
     def __init__(self, id_end_point, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed):
+        """
+        Inicializa um novo conjunto de OIDs para um endpoint.
+        Args:
+            id_end_point (int): ID do endpoint.
+            sysDescr (str): Descrição do sistema.
+            sysName (str): Nome do sistema.
+            sysUpTime (str): Tempo de atividade.
+            hrProcessorLoad (str): Carga do processador.
+            memTotalReal (str): Memória total.
+            memAvailReal (str): Memória disponível.
+            hrStorageSize (str): Tamanho do armazenamento.
+            hrStorageUsed (str): Armazenamento usado.
+        """
         self.id_end_point = id_end_point
         self.sysDescr = sysDescr
         self.sysName = sysName

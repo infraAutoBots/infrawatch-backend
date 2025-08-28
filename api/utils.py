@@ -1,4 +1,3 @@
-from math import e
 import re
 from ipaddress import ip_address
 from schemas import AddEndPointRequest

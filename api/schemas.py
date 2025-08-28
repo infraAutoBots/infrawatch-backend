@@ -4,7 +4,10 @@ from datetime import datetime
 
 
 
-class UserSchemas(BaseModel):    
+class UserSchemas(BaseModel):
+    """
+    Schema para criação e manipulação de dados de usuário.
+    """
     name: str
     email: str
     password: str
@@ -17,6 +20,9 @@ class UserSchemas(BaseModel):
 
 
 class EndPointSchemas(BaseModel):
+    """
+    Schema para representação de um endpoint monitorado.
+    """
 
     ip: str
     interval: int
@@ -33,6 +39,9 @@ class EndPointSchemas(BaseModel):
 
 
 class EndPointsDataSchemas(BaseModel):
+    """
+    Schema para dados coletados de um endpoint.
+    """
     id_end_point: int
     status: bool
     sysDescr: Optional[str]
@@ -49,6 +58,9 @@ class EndPointsDataSchemas(BaseModel):
         from_attributes = True
 
 class EndPointOIDsSchemas(BaseModel):
+    """
+    Schema para OIDs SNMP de um endpoint.
+    """
     sysDescr: Optional[str]
     sysName: Optional[str]
     sysUpTime: Optional[str]
@@ -63,6 +75,9 @@ class EndPointOIDsSchemas(BaseModel):
 
 
 class AddEndPointRequest(BaseModel):
+    """
+    Schema para requisição de adição de endpoint.
+    """
     ip: str
     interval: int
     version: Optional[str]
@@ -85,6 +100,9 @@ class AddEndPointRequest(BaseModel):
         from_attributes = True
 
 class LoginSchemas(BaseModel):
+    """
+    Schema para autenticação de usuário (login).
+    """
     email: str
     password: str
 
@@ -92,6 +110,9 @@ class LoginSchemas(BaseModel):
         from_attributes = True
 
 class ResponseEndPointsDataSchemas(BaseModel):
+    """
+    Schema para resposta de dados de endpoint.
+    """
     status: bool
     sys_descr: Optional[str]
     cpu: Optional[str]
@@ -106,6 +127,9 @@ class ResponseEndPointsDataSchemas(BaseModel):
 
 # Schemas adicionais para usuários
 class UserResponseSchemas(BaseModel):
+    """
+    Schema para resposta detalhada de usuário.
+    """
     id: int
     name: str
     email: str
@@ -120,6 +144,9 @@ class UserResponseSchemas(BaseModel):
 
 
 class UserCreateSchemas(BaseModel):
+    """
+    Schema para criação de novo usuário.
+    """
     name: str
     email: str
     password: str
@@ -132,6 +159,9 @@ class UserCreateSchemas(BaseModel):
 
 
 class UserUpdateSchemas(BaseModel):
+    """
+    Schema para atualização de dados de usuário.
+    """
     name: Optional[str] = None
     email: Optional[str] = None
     access_level: Optional[str] = None
@@ -144,6 +174,9 @@ class UserUpdateSchemas(BaseModel):
 
 
 class UserStatusUpdateSchemas(BaseModel):
+    """
+    Schema para atualização de status de usuário (ativo/inativo).
+    """
     state: bool
 
     class Config:
@@ -151,6 +184,9 @@ class UserStatusUpdateSchemas(BaseModel):
 
 
 class UserStatsSchemas(BaseModel):
+    """
+    Schema para estatísticas agregadas de usuários.
+    """
     total_users: int
     admins: int
     monitors: int
@@ -163,6 +199,9 @@ class UserStatsSchemas(BaseModel):
 
 
 class UserListResponse(BaseModel):
+    """
+    Schema para resposta paginada de usuários.
+    """
     users: List[UserResponseSchemas]
     total: int
     page: int
