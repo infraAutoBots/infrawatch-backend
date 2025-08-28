@@ -78,12 +78,11 @@ class EndPoints(Base):
     user = Column("user", String)
     authKey = Column("authKey", String)
     privKey = Column("privKey", String)
-    webhook = Column("webhook", String)
     id_user = Column("id_usuario", Integer, ForeignKey('users.id'))
     end_points_data = relationship("EndPointsData", cascade="all, delete")
     end_points_oids = relationship("EndPointOIDs", cascade="all, delete")
 
-    def __init__(self, ip, interval, version, community, port, user, authKey, privKey, webhook, id_user):
+    def __init__(self, ip, interval, version, community, port, user, authKey, privKey, id_user):
         """
         Inicializa um novo endpoint monitorado.
         Args:
@@ -95,7 +94,6 @@ class EndPoints(Base):
             user (str): Usuário SNMPv3.
             authKey (str): Chave de autenticação SNMPv3.
             privKey (str): Chave privada SNMPv3.
-            webhook (str): URL de webhook.
             id_user (int): ID do usuário proprietário.
         """
         self.ip = ip
@@ -106,7 +104,6 @@ class EndPoints(Base):
         self.user = user
         self.authKey = authKey
         self.privKey = privKey
-        self.webhook = webhook
         self.id_user = id_user
 
 

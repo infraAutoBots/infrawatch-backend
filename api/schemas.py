@@ -32,7 +32,6 @@ class EndPointSchemas(BaseModel):
     user: str
     authKey: str
     privKey: str
-    webhook: str
 
     class Config:
         from_attributes = True
@@ -86,7 +85,6 @@ class AddEndPointRequest(BaseModel):
     user: Optional[str]
     authKey: Optional[str]
     privKey: Optional[str]
-    webhook: Optional[str]
     sysDescr: Optional[str]
     sysName: Optional[str]
     sysUpTime: Optional[str]
