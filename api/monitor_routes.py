@@ -5,7 +5,7 @@ from models import Users, EndPoints, EndPointsData, EndPointOIDs
 from schemas import EndPointsDataSchemas, AddEndPointRequest
 from utils import valid_end_point
 from typing import Dict, Any, Optional
-
+from pprint import pprint
 
 
 monitor_router = APIRouter(prefix="/monitor", tags=["monitor"], dependencies=[Depends(verify_token)])
@@ -71,7 +71,7 @@ async def add_ip(
 
 
 
-@monitor_router.get("/status", response_model=Dict[str, Any])
+@monitor_router.get("/history", response_model=Dict[str, Any])
 async def get_status(session: Session = Depends(init_session)) -> dict:
     """
     Obtém o status de todos os dispositivos monitorados.
@@ -82,6 +82,22 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
         endpoint_data = session.query(EndPointsData).filter(EndPointsData.id_end_point == data.id).all()
         endpoint_data_serialized = [EndPointsDataSchemas.model_validate(d) for d in endpoint_data]
         list_data.append({"endpoint": data.ip, "data": endpoint_data_serialized})
+    return {"success": True, "data": list_data}
+
+
+@monitor_router.get("/status", response_model=Dict[str, Any])
+async def get_status(session: Session = Depends(init_session)) -> dict:
+    """
+    Obtém o status de todos os dispositivos monitorados.
+    """
+    list_data = []
+    all_data = session.query(EndPoints).all()
+    for data in all_data:
+        last_data = (session.query(EndPointsData)
+                     .filter(EndPointsData.id_end_point == data.id)
+                     .order_by(EndPointsData.id.desc()).first())
+        last_data_serialize = EndPointsDataSchemas.model_validate(last_data) if last_data else None
+        list_data.append({"endpoint": data.ip, "data": last_data_serialize})
     return {"success": True, "data": list_data}
 
 
