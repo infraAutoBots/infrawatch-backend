@@ -80,7 +80,8 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
     all_data = session.query(EndPoints).all()
     for data in all_data:
         endpoint_data = session.query(EndPointsData).filter(EndPointsData.id_end_point == data.id).all()
-        list_data.append({"endpoint": data.ip, "data": endpoint_data})
+        endpoint_data_serialized = [EndPointsDataSchemas.model_validate(d) for d in endpoint_data]
+        list_data.append({"endpoint": data.ip, "data": endpoint_data_serialized})
     return {"success": True, "data": list_data}
 
 
@@ -103,7 +104,10 @@ async def get_ip_info(
         .order_by(EndPointsData.id.desc())
         .first()
     )
-    return last_data
+    # Converte o objeto SQLAlchemy para schema Pydantic se existir
+    if last_data:
+        return EndPointsDataSchemas.model_validate(last_data)
+    return None
 
 
 
