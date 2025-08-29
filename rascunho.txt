@@ -229,6 +229,7 @@ CONVERTER  O MONITORAMENTO
 {
     "ip": "127.0.0.1",
     "interval": 30,
+
     "port": 161,
     "version": "2c",
 
