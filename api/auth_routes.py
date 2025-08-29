@@ -62,7 +62,8 @@ async def login(login_schemas: LoginSchemas, session: Session = Depends(init_ses
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "Bearer"
+        "token_type": "Bearer",
+        "id": user.id
     }
 
 
