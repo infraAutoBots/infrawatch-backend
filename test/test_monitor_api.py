@@ -45,7 +45,6 @@ class MonitorTester:
             "user": "",
             "authKey": "",
             "privKey": "",
-            "webhook": "",
             "sysDescr": "desc",
             "sysName": "name",
             "sysUpTime": "up",

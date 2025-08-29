@@ -48,7 +48,6 @@ async def add_ip(
         end_point.user,
         end_point.authKey,
         end_point.privKey,
-        end_point.webhook,
         logged_user.id
     )
     session.add(new_endpoint)
@@ -155,7 +154,6 @@ async def update_ip_info(
     endpoint.user = end_point.user
     endpoint.authKey = end_point.authKey
     endpoint.privKey = end_point.privKey
-    endpoint.webhook = end_point.webhook
 
     oids.sysDescr = end_point.sysDescr
     oids.sysName = end_point.sysName
