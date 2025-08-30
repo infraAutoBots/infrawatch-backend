@@ -85,6 +85,7 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
     return {"success": True, "data": list_data}
 
 
+
 @monitor_router.get("/status", response_model=Dict[str, Any])
 async def get_status(session: Session = Depends(init_session)) -> dict:
     """
@@ -97,8 +98,31 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
                      .filter(EndPointsData.id_end_point == data.id)
                      .order_by(EndPointsData.id.desc()).first())
         last_data_serialize = EndPointsDataSchemas.model_validate(last_data) if last_data else None
-        list_data.append({"endpoint": data.ip, "data": last_data_serialize})
-    return {"success": True, "data": list_data}
+        snmp = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == last_data.id)
+        list_data.append({"endpoint": data.ip, "snmp": True if snmp else False, "data": last_data_serialize})
+
+    def total_depravado(data:EndPointsDataSchemas):
+        return (data and data.status 
+                and data.sysDescr is None 
+                and data.sysName is None
+                and data.sysUpTime is None
+                and data.hrProcessorLoad is None
+                and data.memTotalReal is None
+                and data.memAvailReal is None
+                and data.hrStorageSize is None
+                and data.hrStorageUsed is None)
+
+    return {
+        "monitors": list_data,
+        "total": len(list_data),
+        "total_online": sum(1 for m in list_data
+                                if m["data"] and m["data"].status),
+        "total_offline": sum(1 for m in list_data
+                             if m["data"] and not m["data"].status),
+        "total_depravado": sum(1 for m in list_data
+                            if m["data"] and m["snmp"] and total_depravado(m["data"]))
+    }
+
 
  
 @monitor_router.get("/{ip}", response_model=Optional[EndPointsDataSchemas])
