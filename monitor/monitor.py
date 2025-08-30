@@ -15,7 +15,7 @@ from models import EndPoints, EndPointsData
 from snmp_engine_pool import SNMPEnginePool, logger
 from utils import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication)
-
+from pprint import pprint
 
 
 load_dotenv()
@@ -66,17 +66,25 @@ class OptimizedMonitor:
         def sync_insert():
             session = session_factory()
             try:
+                sysDescr=hosts.snmp_data.get("sysDescr") if hosts.snmp_data else None
+                sysName=hosts.snmp_data.get("sysName") if hosts.snmp_data else None
+                sysUpTime=hosts.snmp_data.get("sysUpTime") if hosts.snmp_data else None
+                hrProcessorLoad=hosts.snmp_data.get("hrProcessorLoad") if hosts.snmp_data else None
+                memTotalReal=hosts.snmp_data.get("memTotalReal") if hosts.snmp_data else None
+                memAvailReal=hosts.snmp_data.get("memAvailReal") if hosts.snmp_data else None
+                hrStorageSize=hosts.snmp_data.get("hrStorageSize") if hosts.snmp_data else None
+                hrStorageUsed=hosts.snmp_data.get("hrStorageUsed") if hosts.snmp_data else None
                 data = EndPointsData(
                     id_end_point=hosts._id,
-                    status=True,
-                    sysDescr=hosts.snmp_data.get("sysDescr"),
-                    sysName=hosts.snmp_data.get("sysName"),
-                    sysUpTime=hosts.snmp_data.get("sysUpTime"),
-                    hrProcessorLoad=hosts.snmp_data.get("hrProcessorLoad"),
-                    memTotalReal=hosts.snmp_data.get("memTotalReal"),
-                    memAvailReal=hosts.snmp_data.get("memAvailReal"),
-                    hrStorageSize=hosts.snmp_data.get("hrStorageSize"),
-                    hrStorageUsed=hosts.snmp_data.get("hrStorageUsed"),
+                    status=hosts.is_alive,
+                    sysDescr=sysDescr,
+                    sysName=sysName,
+                    sysUpTime=sysUpTime,
+                    hrProcessorLoad=hrProcessorLoad,
+                    memTotalReal=memTotalReal,
+                    memAvailReal=memAvailReal,
+                    hrStorageSize=hrStorageSize,
+                    hrStorageUsed=hrStorageUsed,
                     last_updated=hosts.last_updated
                 )
                 session.add(data)
@@ -101,7 +109,6 @@ class OptimizedMonitor:
                     if ip in self.hosts_status:
                         # Preserva estatísticas de falha
                         new_hosts[ip].consecutive_failures = self.hosts_status[ip].consecutive_failures
-                        new_hosts[ip].last_success = self.hosts_status[ip].last_success
                     self.hosts_status[ip] = new_hosts[ip]
         finally:
             session.close()
@@ -219,7 +226,6 @@ class OptimizedMonitor:
         if is_alive and check_ip_for_snmp(self.hosts_status[ip]) and snmp_data and any(snmp_data.values()):
             # Sucesso - reseta contador
             self.hosts_status[ip].consecutive_failures = 0
-            self.hosts_status[ip].last_success = datetime.now()
         elif is_alive and check_ip_for_snmp(self.hosts_status[ip]) and not any(snmp_data.values()):
             self.hosts_status[ip].consecutive_failures += 1
             self.global_failure_count += 1
@@ -273,7 +279,6 @@ class OptimizedMonitor:
             async for result in self.monitoring_cycle():
                 if result:
                     interval = int(result.interval) if result.interval else interval
-                if result and result.snmp_data:
                     await self.insert_snmp_data_async(session_factory, result)
 
             elapsed = asyncio.get_event_loop().time() - start_time

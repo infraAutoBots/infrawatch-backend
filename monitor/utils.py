@@ -24,12 +24,10 @@ class HostStatus:
     privKey: str = ""
     snmp_data: Dict[str, str] = None
     oids: List[str] = None
-    last_updated: datetime = None
+    last_updated: Optional[datetime] = None
     ping_rtt: float = 0.0
     # NOVO: Contador de falhas consecutivas
     consecutive_failures: int = 0
-    last_success: Optional[datetime] = None
-
 
 
 def print_logs(result):
