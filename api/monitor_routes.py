@@ -92,13 +92,15 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
     Obtém o status de todos os dispositivos monitorados.
     """
     list_data = []
+
     all_data = session.query(EndPoints).all()
     for data in all_data:
         last_data = (session.query(EndPointsData)
                      .filter(EndPointsData.id_end_point == data.id)
                      .order_by(EndPointsData.id.desc()).first())
         last_data_serialize = EndPointsDataSchemas.model_validate(last_data) if last_data else None
-        snmp = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == last_data.id)
+        if last_data:
+            snmp = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == last_data.id)
         list_data.append({"endpoint": data.ip, "snmp": True if snmp else False, "data": last_data_serialize})
 
     def total_depravado(data:EndPointsDataSchemas):
