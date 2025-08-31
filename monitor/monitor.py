@@ -50,7 +50,8 @@ class OptimizedMonitor:
         self.lock = asyncio.Lock()
         self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80,443,22,161").split(",")]
         # NOVO: Configurações de reconexão
-        self.max_consecutive_failures = 5
+        self.max_consecutive_snmp_failures = 5
+        self.max_consecutive_ping_failures = 5
         self.engine_refresh_threshold = 10  # Renova engines após X falhas globais
         self.global_failure_count = 0
 
@@ -66,15 +67,76 @@ class OptimizedMonitor:
         def sync_insert():
             session = session_factory()
             try:
-                sysDescr=hosts.snmp_data.get("sysDescr") if hosts.snmp_data else None
-                sysName=hosts.snmp_data.get("sysName") if hosts.snmp_data else None
-                sysUpTime=hosts.snmp_data.get("sysUpTime") if hosts.snmp_data else None
-                hrProcessorLoad=hosts.snmp_data.get("hrProcessorLoad") if hosts.snmp_data else None
-                memTotalReal=hosts.snmp_data.get("memTotalReal") if hosts.snmp_data else None
-                memAvailReal=hosts.snmp_data.get("memAvailReal") if hosts.snmp_data else None
-                hrStorageSize=hosts.snmp_data.get("hrStorageSize") if hosts.snmp_data else None
-                hrStorageUsed=hosts.snmp_data.get("hrStorageUsed") if hosts.snmp_data else None
-                data = EndPointsData(
+                # Extrair dados do SNMP
+                sysDescr = hosts.snmp_data.get("sysDescr") if hosts.snmp_data else None
+                sysName = hosts.snmp_data.get("sysName") if hosts.snmp_data else None
+                sysUpTime = hosts.snmp_data.get("sysUpTime") if hosts.snmp_data else None
+                hrProcessorLoad = hosts.snmp_data.get("hrProcessorLoad") if hosts.snmp_data else None
+                memTotalReal = hosts.snmp_data.get("memTotalReal") if hosts.snmp_data else None
+                memAvailReal = hosts.snmp_data.get("memAvailReal") if hosts.snmp_data else None
+                hrStorageSize = hosts.snmp_data.get("hrStorageSize") if hosts.snmp_data else None
+                hrStorageUsed = hosts.snmp_data.get("hrStorageUsed") if hosts.snmp_data else None
+    
+                # Buscar os dois últimos registros para este endpoint, ordenados por data (mais recente primeiro)
+                last_records = session.query(EndPointsData)\
+                    .filter(EndPointsData.id_end_point == hosts._id)\
+                    .order_by(EndPointsData.last_updated.desc())\
+                    .limit(2)\
+                    .all()
+    
+                # Função para comparar dados relevantes
+                def are_data_equal(record, new_data):
+                    """Compara se os dados relevantes são iguais"""
+                    if not record:
+                        return False
+                    
+                    return (
+                        record.id_end_point == new_data["id_end_point"] and
+                        record.status == new_data["status"] and
+                        record.sysDescr == new_data["sysDescr"] and
+                        record.sysName == new_data["sysName"] and
+                        record.hrProcessorLoad == new_data["hrProcessorLoad"] and
+                        record.memTotalReal == new_data["memTotalReal"] and
+                        record.memAvailReal == new_data["memAvailReal"] and
+                        record.hrStorageSize == new_data["hrStorageSize"] and
+                        record.hrStorageUsed == new_data["hrStorageUsed"]
+                    )
+    
+                # Dados atuais para comparação
+                current_data = {
+                    "id_end_point": hosts._id,
+                    "status": hosts.is_alive,
+                    "sysDescr": sysDescr,
+                    "sysName": sysName,
+                    "hrProcessorLoad": hrProcessorLoad,
+                    "memTotalReal": memTotalReal,
+                    "memAvailReal": memAvailReal,
+                    "hrStorageSize": hrStorageSize,
+                    "hrStorageUsed": hrStorageUsed
+                }
+    
+                # Verificar se temos pelo menos um registro anterior
+                if len(last_records) >= 1:
+                    last_record = last_records[0]  # Mais recente
+                    penultimate_record = last_records[1] if len(last_records) >= 2 else None
+    
+                    # Verificar se o último e penúltimo são iguais aos dados atuais
+                    last_equal = are_data_equal(last_record, current_data)
+                    penultimate_equal = are_data_equal(penultimate_record, current_data) if penultimate_record else True
+    
+                    if last_equal and penultimate_equal:
+                        # Dados são iguais aos dois últimos registros
+                        # Atualizar apenas last_updated e sysUpTime no último registro
+                        last_record.last_updated = hosts.last_updated
+                        last_record.sysUpTime = sysUpTime
+                        
+                        session.commit()
+                        logger.debug(f"Dados duplicados para endpoint {hosts._id}. Atualizando último registro com timestamp: {hosts.last_updated}")
+                        return
+                
+                # Dados são diferentes ou não temos histórico suficiente
+                # Inserir novo registro
+                new_data = EndPointsData(
                     id_end_point=hosts._id,
                     status=hosts.is_alive,
                     sysDescr=sysDescr,
@@ -87,10 +149,18 @@ class OptimizedMonitor:
                     hrStorageUsed=hrStorageUsed,
                     last_updated=hosts.last_updated
                 )
-                session.add(data)
+                
+                session.add(new_data)
                 session.commit()
+                logger.debug(f"Novo registro inserido para endpoint {hosts._id}")
+                
+            except Exception as e:
+                logger.error(f"Erro ao inserir dados SNMP para endpoint {hosts._id}: {e}")
+                session.rollback()
+                raise
             finally:
                 session.close()
+        
         await loop.run_in_executor(None, sync_insert)
 
     async def check_hosts_db(self):
@@ -108,7 +178,7 @@ class OptimizedMonitor:
                 for ip, host in new_hosts.items():
                     if ip in self.hosts_status:
                         # Preserva estatísticas de falha
-                        new_hosts[ip].consecutive_failures = self.hosts_status[ip].consecutive_failures
+                        new_hosts[ip].consecutive_snmp_failures = self.hosts_status[ip].consecutive_snmp_failures
                     self.hosts_status[ip] = new_hosts[ip]
         finally:
             session.close()
@@ -152,7 +222,7 @@ class OptimizedMonitor:
         
         for attempt in range(max_retries):
             # Força nova engine se muitas falhas consecutivas
-            force_new = host.consecutive_failures >= self.max_consecutive_failures
+            force_new = host.consecutive_snmp_failures >= self.max_consecutive_snmp_failures
             
             try:
                 return await self._perform_snmp_check(ip, force_new)
@@ -211,7 +281,7 @@ class OptimizedMonitor:
         is_alive, rtt = ping_results.get(ip, (False, 0.0))
 
         snmp_data = None
-
+        
         if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
             # Tenta SNMP com retry
             snmp_data = await self.fast_snmp_check_with_retry(ip)
@@ -221,13 +291,16 @@ class OptimizedMonitor:
             if tcp_alive and check_ip_for_snmp(self.hosts_status[ip]):
                 is_alive = True
                 snmp_data = await self.fast_snmp_check_with_retry(ip)
-    
-        # Atualiza contadores de falha
-        if is_alive and check_ip_for_snmp(self.hosts_status[ip]) and snmp_data and any(snmp_data.values()):
+
+        if is_alive:
+            self.hosts_status[ip].consecutive_ping_failures += 0
+        if not is_alive:
+            self.hosts_status[ip].consecutive_ping_failures += 1
+        elif is_alive and check_ip_for_snmp(self.hosts_status[ip]) and snmp_data and any(snmp_data.values()):
             # Sucesso - reseta contador
-            self.hosts_status[ip].consecutive_failures = 0
+            self.hosts_status[ip].consecutive_snmp_failures = 0
         elif is_alive and check_ip_for_snmp(self.hosts_status[ip]) and not any(snmp_data.values()):
-            self.hosts_status[ip].consecutive_failures += 1
+            self.hosts_status[ip].consecutive_snmp_failures += 1
             self.global_failure_count += 1
 
         self.hosts_status[ip].is_alive = is_alive
@@ -239,7 +312,7 @@ class OptimizedMonitor:
         if self.global_failure_count >= self.engine_refresh_threshold:
             logger.info("Renovando todas as engines SNMP devido a falhas globais...")
             await snmp_pool.refresh_all_engines()
-            self.hosts_status[ip].consecutive_failures = 0
+            self.hosts_status[ip].consecutive_snmp_failures = 0
             self.global_failure_count = 0
 
         return self.hosts_status[ip]

@@ -27,12 +27,13 @@ class HostStatus:
     last_updated: Optional[datetime] = None
     ping_rtt: float = 0.0
     # NOVO: Contador de falhas consecutivas
-    consecutive_failures: int = 0
+    consecutive_ping_failures: int = 0
+    consecutive_snmp_failures: int = 0
 
 
 def print_logs(result):
     status_icon = "🟢" if result.is_alive else "🔴"
-    failure_info = f" (Falhas: {result.consecutive_failures})" if result.consecutive_failures > 0 else ""
+    failure_info = f" (Falhas: {result.consecutive_snmp_failures})" if result.consecutive_snmp_failures > 0 else ""
     snmp_icon = f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}" if result.snmp_data and result.snmp_data.get('sysDescr') else "❌"
     print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | SNMP: {snmp_icon}{failure_info}")
 
