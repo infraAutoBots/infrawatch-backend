@@ -361,7 +361,8 @@ class OptimizedMonitor:
 
 
                     # enviar a msg ao mesmo tempo que o inset snmp data async
-                    
+                    # nao esquecer de guardar o estado da notificacao na db
+
                     interval = int(result.interval) if result.interval else interval
                     await self.insert_snmp_data_async(session_factory, result)
 
