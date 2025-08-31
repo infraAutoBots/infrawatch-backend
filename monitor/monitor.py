@@ -351,6 +351,17 @@ class OptimizedMonitor:
 
             async for result in self.monitoring_cycle():
                 if result:
+                    # se ter 5 falhas de ping em um dispositivo e o host esta inativo
+                    # envia alerta por email e variavel informed como true
+                    if self.hosts_status[result].consecutive_ping_failures >= 5:
+                        logger.warning(f"Host {result.ip} está com {self.hosts_status[result].consecutive_ping_failures} falhas consecutivas.")
+                    # se as falhas forem mas de 5 e o host esta ativo e o informed for true
+                    # enviar uma no email que o sistema  restauro
+                    # E informed vai ser false e cosecutive ping 0
+
+
+                    # enviar a msg ao mesmo tempo que o inset snmp data async
+                    
                     interval = int(result.interval) if result.interval else interval
                     await self.insert_snmp_data_async(session_factory, result)
 

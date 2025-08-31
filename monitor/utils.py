@@ -27,6 +27,7 @@ class HostStatus:
     last_updated: Optional[datetime] = None
     ping_rtt: float = 0.0
     # NOVO: Contador de falhas consecutivas
+    informed: bool = False
     consecutive_ping_failures: int = 0
     consecutive_snmp_failures: int = 0
 
