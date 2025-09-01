@@ -177,10 +177,27 @@ main() {
 }
 
 # Verificar se a API está rodando
-echo "🔍 Verificando se a API está rodando..."
+# Função para testar rotas de alertas
+test_alert_routes() {
+    echo -e "\n� Executando testes completos da API de Alertas..."
+    
+    if [ -f "test_alert_routes.py" ]; then
+        python3 test_alert_routes.py
+        if [ $? -eq 0 ]; then
+            echo "✅ Testes de alertas concluídos com sucesso"
+        else
+            echo "❌ Alguns testes de alertas falharam"
+        fi
+    else
+        echo "⚠️ Arquivo test_alert_routes.py não encontrado"
+    fi
+}
+
+echo "�🔍 Verificando se a API está rodando..."
 if curl -s -f "$API_BASE/docs" > /dev/null; then
     echo "✅ API está rodando"
     main
+    test_alert_routes
 else
     echo "❌ API não está rodando em $API_BASE"
     echo "Execute: python api/app.py"
