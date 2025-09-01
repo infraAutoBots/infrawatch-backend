@@ -60,7 +60,8 @@ class OptimizedMonitor:
             for row in data:
                 self.hosts_status[row.ip] = get_HostStatus(row, session)
             session.close()
-    
+
+   
     async def insert_snmp_data_async(self, session_factory, hosts: HostStatus):
         loop = asyncio.get_event_loop()
     
@@ -177,8 +178,10 @@ class OptimizedMonitor:
                 
                 for ip, host in new_hosts.items():
                     if ip in self.hosts_status:
-                        # Preserva estatísticas de falha
+                        # Preserva TODOS os contadores e estadísticas de falha
                         new_hosts[ip].consecutive_snmp_failures = self.hosts_status[ip].consecutive_snmp_failures
+                        new_hosts[ip].consecutive_ping_failures = self.hosts_status[ip].consecutive_ping_failures
+                        new_hosts[ip].informed = getattr(self.hosts_status[ip], 'informed', False)
                     self.hosts_status[ip] = new_hosts[ip]
         finally:
             session.close()
@@ -278,11 +281,12 @@ class OptimizedMonitor:
 
         # Ping check
         ping_results = await self.fast_ping_check([ip])
-        is_alive, rtt = ping_results.get(ip, (False, 0.0))
+        is_alive_ping, rtt = ping_results.get(ip, (False, 0.0))
 
         snmp_data = None
+        is_alive = is_alive_ping  # Valor inicial baseado no ping
         
-        if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
+        if is_alive_ping and check_ip_for_snmp(self.hosts_status[ip]):
             # Tenta SNMP com retry
             snmp_data = await self.fast_snmp_check_with_retry(ip)
         else:
@@ -292,16 +296,19 @@ class OptimizedMonitor:
                 is_alive = True
                 snmp_data = await self.fast_snmp_check_with_retry(ip)
 
-        if is_alive:
-            self.hosts_status[ip].consecutive_ping_failures += 0
-        if not is_alive:
+        # CORREÇÃO: Atualiza contadores de ping baseado APENAS no resultado do ping inicial
+        if is_alive_ping:
+            self.hosts_status[ip].consecutive_ping_failures = 0
+        elif self.hosts_status[ip].consecutive_ping_failures < self.max_consecutive_ping_failures + 1:
             self.hosts_status[ip].consecutive_ping_failures += 1
-        elif is_alive and check_ip_for_snmp(self.hosts_status[ip]) and snmp_data and any(snmp_data.values()):
-            # Sucesso - reseta contador
-            self.hosts_status[ip].consecutive_snmp_failures = 0
-        elif is_alive and check_ip_for_snmp(self.hosts_status[ip]) and not any(snmp_data.values()):
-            self.hosts_status[ip].consecutive_snmp_failures += 1
-            self.global_failure_count += 1
+
+        # Atualiza contadores de SNMP separadamente
+        if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
+            if snmp_data and any(snmp_data.values()):
+                self.hosts_status[ip].consecutive_snmp_failures = 0
+            else:
+                self.hosts_status[ip].consecutive_snmp_failures += 1
+                self.global_failure_count += 1
 
         self.hosts_status[ip].is_alive = is_alive
         self.hosts_status[ip].snmp_data = snmp_data
@@ -312,7 +319,8 @@ class OptimizedMonitor:
         if self.global_failure_count >= self.engine_refresh_threshold:
             logger.info("Renovando todas as engines SNMP devido a falhas globais...")
             await snmp_pool.refresh_all_engines()
-            self.hosts_status[ip].consecutive_snmp_failures = 0
+            for host in self.hosts_status.values():
+                host.consecutive_snmp_failures = 0
             self.global_failure_count = 0
 
         return self.hosts_status[ip]
@@ -338,7 +346,27 @@ class OptimizedMonitor:
                     yield result
         except Exception as e:
             logger.error(f"Monitoring cycle error: {e}")
-   
+
+    async def notification(self, session_factory, result: HostStatus):
+        ping_failures = self.hosts_status[result.ip].consecutive_ping_failures
+
+        # Alerta por falhas de PING (host offline)   session_factory
+        if (ping_failures >= self.max_consecutive_ping_failures and not result.is_alive 
+            and not getattr(self.hosts_status[result.ip], 'informed', False)):
+            logger.warning(f"📛📛📛📛📛📛 Host {result.ip} está OFFLINE com {ping_failures} falhas consecutivas de ping.")
+            self.hosts_status[result.ip].informed = True
+
+        # Recuperação de PING (host volta a ficar online)   session_factory
+        if (ping_failures >= self.max_consecutive_ping_failures and result.is_alive 
+            and getattr(self.hosts_status[result.ip], 'informed', False)):
+            logger.info(f"✅✅✅✅✅✅ Host {result.ip} foi restaurado (PING).")
+            self.hosts_status[result.ip].informed = False
+            self.hosts_status[result.ip].consecutive_ping_failures = 0
+
+        # inserir dados no banco de dados
+        # async with session_factory() as session:
+        #     await self.insert_host_status(session, result)
+
     async def run_monitoring(self, interval: float = 30.0):
         """Loop principal com renovação periódica de engines"""
         logger.info("🚀 Iniciando monitoramento otimizado com auto-reconexão...")
@@ -348,23 +376,12 @@ class OptimizedMonitor:
 
         while True:
             start_time = asyncio.get_event_loop().time()
-
             async for result in self.monitoring_cycle():
                 if result:
-                    # se ter 5 falhas de ping em um dispositivo e o host esta inativo
-                    # envia alerta por email e variavel informed como true
-                    if self.hosts_status[result].consecutive_ping_failures >= 5:
-                        logger.warning(f"Host {result.ip} está com {self.hosts_status[result].consecutive_ping_failures} falhas consecutivas.")
-                    # se as falhas forem mas de 5 e o host esta ativo e o informed for true
-                    # enviar uma no email que o sistema  restauro
-                    # E informed vai ser false e cosecutive ping 0
-
-
-                    # enviar a msg ao mesmo tempo que o inset snmp data async
-                    # nao esquecer de guardar o estado da notificacao na db
-
                     interval = int(result.interval) if result.interval else interval
-                    await self.insert_snmp_data_async(session_factory, result)
+                    await asyncio.gather(self.notification(session_factory, result),
+                        self.insert_snmp_data_async(session_factory, result),
+                        return_exceptions=True)
 
             elapsed = asyncio.get_event_loop().time() - start_time
             sleep_time = max(0.1, interval - elapsed)
