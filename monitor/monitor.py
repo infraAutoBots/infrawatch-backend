@@ -459,15 +459,18 @@ class HyperFastMonitor(OptimizedMonitor):
 if __name__ == "__main__":
     import sys
 
-    mode = sys.argv[1] if len(sys.argv) > 1 else "hypers"
+    # mode = sys.argv[1] if len(sys.argv) > 1 else "hypers"
     # se estiver online  e nao cosegui pegar os dados 4 relatar
     # se estiver offline  relatar como offline
 
-    if mode == "hyper":
-        print("🏃‍♂️ Modo HYPER-RÁPIDO ativado!")
-        monitor = HyperFastMonitor()
-        asyncio.run(monitor.run_monitoring(interval=30.0))
-    else:
-        print("⚡ Modo OTIMIZADO ativado!")
-        monitor = OptimizedMonitor()
-        asyncio.run(monitor.run_monitoring(interval=30.0))
+    print("🏃‍♂️ Modo HYPER-RÁPIDO ativado!")
+    monitor = HyperFastMonitor()
+    asyncio.run(monitor.run_monitoring(interval=30.0))
+    # if mode == "hyper":
+    #     print("🏃‍♂️ Modo HYPER-RÁPIDO ativado!")
+    #     monitor = HyperFastMonitor()
+    #     asyncio.run(monitor.run_monitoring(interval=30.0))
+    # else:
+    #     print("⚡ Modo OTIMIZADO ativado!")
+    #     monitor = OptimizedMonitor()
+    #     asyncio.run(monitor.run_monitoring(interval=30.0))
