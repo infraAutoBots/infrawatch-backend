@@ -2,6 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
+from enum import Enum
 
 
 
@@ -198,6 +199,149 @@ class EndPointOIDs(Base):
         self.memAvailReal = memAvailReal
         self.hrStorageSize = hrStorageSize
         self.hrStorageUsed = hrStorageUsed
+
+
+class AlertSeverity(str, Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+class AlertStatus(str, Enum):
+    ACTIVE = "active"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
+class AlertCategory(str, Enum):
+    INFRASTRUCTURE = "infrastructure"
+    SECURITY = "security"
+    PERFORMANCE = "performance"
+    NETWORK = "network"
+
+class AlertImpact(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+class Alerts(Base):
+    """
+    Modelo ORM para a tabela de alertas do sistema.
+    Representa alertas gerados pelo sistema de monitoramento.
+    """
+    __tablename__ = 'alerts'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    title = Column("title", String(255), nullable=False)
+    description = Column("description", Text, nullable=True)
+    severity = Column("severity", String(50), nullable=False)  # critical, high, medium, low
+    status = Column("status", String(50), nullable=False, default="active")  # active, acknowledged, resolved
+    category = Column("category", String(50), nullable=False)  # infrastructure, security, performance, network
+    impact = Column("impact", String(50), nullable=False, default="medium")  # high, medium, low
+    system = Column("system", String(255), nullable=False)  # Sistema/endpoint que gerou o alerta
+    assignee = Column("assignee", String(255), nullable=True)  # Responsável pelo alerta
+    
+    # Relacionamentos
+    id_endpoint = Column("id_endpoint", Integer, ForeignKey('endpoints.id'), nullable=True)
+    id_user_created = Column("id_user_created", Integer, ForeignKey('users.id'), nullable=False)
+    id_user_assigned = Column("id_user_assigned", Integer, ForeignKey('users.id'), nullable=True)
+    
+    # Timestamps
+    created_at = Column("created_at", DateTime, default=func.now(), nullable=False)
+    updated_at = Column("updated_at", DateTime, default=func.now(), server_default=func.now(), onupdate=func.now(), nullable=False)
+    acknowledged_at = Column("acknowledged_at", DateTime, nullable=True)
+    resolved_at = Column("resolved_at", DateTime, nullable=True)
+    
+    # Relacionamentos ORM
+    endpoint = relationship("EndPoints", backref="alerts")
+    user_created = relationship("Users", foreign_keys=[id_user_created], backref="created_alerts")
+    user_assigned = relationship("Users", foreign_keys=[id_user_assigned], backref="assigned_alerts")
+    alert_logs = relationship("AlertLogs", cascade="all, delete-orphan", backref="alert")
+
+    def __init__(self, title, description, severity, category, system, impact="medium", 
+                 id_endpoint=None, id_user_created=None, assignee=None):
+        from datetime import datetime
+        self.title = title
+        self.description = description
+        self.severity = severity
+        self.category = category
+        self.system = system
+        self.impact = impact
+        self.id_endpoint = id_endpoint
+        self.id_user_created = id_user_created
+        self.assignee = assignee
+        self.status = "active"  # Define status padrão
+        # Inicializar timestamps explicitamente com datetime atual
+        now = datetime.now()
+        self.created_at = now
+        self.updated_at = now
+
+    @property
+    def duration(self):
+        """Calcula a duração do alerta desde a criação"""
+        from datetime import datetime
+        if self.resolved_at:
+            delta = self.resolved_at - self.created_at
+        else:
+            delta = datetime.utcnow() - self.created_at
+        
+        hours = int(delta.total_seconds() // 3600)
+        minutes = int((delta.total_seconds() % 3600) // 60)
+        
+        if hours > 0:
+            return f"{hours}h {minutes}min"
+        return f"{minutes}min"
+
+
+class AlertLogs(Base):
+    """
+    Modelo ORM para logs/histórico de ações nos alertas.
+    """
+    __tablename__ = 'alert_logs'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    id_alert = Column("id_alert", Integer, ForeignKey('alerts.id'), nullable=False)
+    id_user = Column("id_user", Integer, ForeignKey('users.id'), nullable=False)
+    action = Column("action", String(100), nullable=False)  # created, acknowledged, resolved, assigned, commented
+    comment = Column("comment", Text, nullable=True)
+    created_at = Column("created_at", DateTime, default=func.now(), nullable=False)
+    
+    # Relacionamentos ORM
+    user = relationship("Users", backref="alert_actions")
+
+    def __init__(self, id_alert, id_user, action, comment=None):
+        self.id_alert = id_alert
+        self.id_user = id_user
+        self.action = action
+        self.comment = comment
+
+
+class AlertRules(Base):
+    """
+    Modelo ORM para regras de geração automática de alertas.
+    """
+    __tablename__ = 'alert_rules'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    name = Column("name", String(255), nullable=False)
+    description = Column("description", Text, nullable=True)
+    condition = Column("condition", Text, nullable=False)  # JSON com condições
+    severity = Column("severity", String(50), nullable=False)
+    category = Column("category", String(50), nullable=False)
+    is_active = Column("is_active", Boolean, default=True)
+    id_user_created = Column("id_user_created", Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # Relacionamentos
+    user_created = relationship("Users", backref="alert_rules")
+
+    def __init__(self, name, description, condition, severity, category, id_user_created):
+        self.name = name
+        self.description = description
+        self.condition = condition
+        self.severity = severity
+        self.category = category
+        self.id_user_created = id_user_created
 
 # executar a criacao dos metadados do banco de dados
 # alembic init alembic
