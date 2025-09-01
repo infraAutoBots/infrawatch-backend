@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from auth_routes import auth_router
 from monitor_routes import monitor_router
 from users_routes import users_router
+from alert_routes import alert_router
 
 
 
@@ -33,6 +34,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(monitor_router)
 app.include_router(users_router)
+app.include_router(alert_router)
 
 
 if __name__ == "__main__":
