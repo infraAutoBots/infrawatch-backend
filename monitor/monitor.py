@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Tuple
 from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget,
                                          ContextData, ObjectType, ObjectIdentity)
 
+from alert_email_service import EmailService
 from dependencies import init_session
 from models import EndPoints, EndPointsData
 from snmp_engine_pool import SNMPEnginePool, logger
@@ -49,6 +50,9 @@ class OptimizedMonitor:
         self.hosts_status: Dict[str, HostStatus] = {}
         self.lock = asyncio.Lock()
         self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80,443,22,161").split(",")]
+        
+        self.notification_smtp_email = EmailService()
+
         # NOVO: Configurações de reconexão
         self.max_consecutive_snmp_failures = 5
         self.max_consecutive_ping_failures = 5
@@ -182,6 +186,7 @@ class OptimizedMonitor:
                         new_hosts[ip].consecutive_snmp_failures = self.hosts_status[ip].consecutive_snmp_failures
                         new_hosts[ip].consecutive_ping_failures = self.hosts_status[ip].consecutive_ping_failures
                         new_hosts[ip].informed = getattr(self.hosts_status[ip], 'informed', False)
+                        new_hosts[ip].snmp_informed = getattr(self.hosts_status[ip], 'snmp_informed', False)
                     self.hosts_status[ip] = new_hosts[ip]
         finally:
             session.close()
@@ -319,8 +324,7 @@ class OptimizedMonitor:
         if self.global_failure_count >= self.engine_refresh_threshold:
             logger.info("Renovando todas as engines SNMP devido a falhas globais...")
             await snmp_pool.refresh_all_engines()
-            for host in self.hosts_status.values():
-                host.consecutive_snmp_failures = 0
+            self.hosts_status[ip].consecutive_snmp_failures = 0
             self.global_failure_count = 0
 
         return self.hosts_status[ip]
@@ -349,23 +353,63 @@ class OptimizedMonitor:
 
     async def notification(self, session_factory, result: HostStatus):
         ping_failures = self.hosts_status[result.ip].consecutive_ping_failures
+        snmp_failures = self.hosts_status[result.ip].consecutive_snmp_failures
 
         # Alerta por falhas de PING (host offline)   session_factory
         if (ping_failures >= self.max_consecutive_ping_failures and not result.is_alive 
             and not getattr(self.hosts_status[result.ip], 'informed', False)):
+            self.notification_smtp_email.send_alert_email(
+                to_emails=["ndondadaniel2020@gmail.com"],
+                subject=f"Host {result.ip} está OFFLINE",
+                endpoint_name=result.ip,
+                endpoint_ip=result.ip,
+                status="DOWN",
+                timestamp=datetime.now()
+            )
             logger.warning(f"📛📛📛📛📛📛 Host {result.ip} está OFFLINE com {ping_failures} falhas consecutivas de ping.")
+            # add na db
             self.hosts_status[result.ip].informed = True
 
         # Recuperação de PING (host volta a ficar online)   session_factory
         if (ping_failures >= self.max_consecutive_ping_failures and result.is_alive 
             and getattr(self.hosts_status[result.ip], 'informed', False)):
+            self.notification_smtp_email.send_alert_email(
+            to_emails=["ndondadaniel2020@gmail.com"],
+            subject=f"Host {result.ip} está ONLINE",
+            endpoint_name=result.ip,
+            endpoint_ip=result.ip,
+            status="UP",
+            timestamp=datetime.now()
+            )
             logger.info(f"✅✅✅✅✅✅ Host {result.ip} foi restaurado (PING).")
+            # add na db
             self.hosts_status[result.ip].informed = False
             self.hosts_status[result.ip].consecutive_ping_failures = 0
 
-        # inserir dados no banco de dados
-        # async with session_factory() as session:
-        #     await self.insert_host_status(session, result)
+        # Host está online, mas não consegue pegar dados SNMP (e SNMP está configurado)
+        if (result.is_alive and snmp_failures > self.max_consecutive_snmp_failures
+            and check_ip_for_snmp(self.hosts_status[result.ip])
+            and (not result.snmp_data or not any(result.snmp_data.values()))
+            and not getattr(self.hosts_status[result.ip], 'snmp_informed', False)
+        ):
+            self.notification_smtp_email.send_alert_email(
+            to_emails=["ndondadaniel2020@gmail.com"],
+            subject=f"Host {result.ip} ONLINE mas SNMP FALHOU",
+            endpoint_name=result.ip,
+            endpoint_ip=result.ip,
+            status="SNMP DOWN",
+            timestamp=datetime.now()
+            )
+            logger.warning(f"⚠️⚠️⚠️ Host {result.ip} está ONLINE mas SNMP não respondeu.")
+            self.hosts_status[result.ip].snmp_informed = True
+
+        # Se SNMP voltar a responder, limpa flag de alerta SNMP
+        if (result.is_alive
+            and check_ip_for_snmp(self.hosts_status[result.ip])
+            and result.snmp_data and any(result.snmp_data.values())
+            and getattr(self.hosts_status[result.ip], 'snmp_informed', False)):
+            logger.info(f"✅✅✅ Host {result.ip} SNMP voltou a responder.")
+            self.hosts_status[result.ip].snmp_informed = False
 
     async def run_monitoring(self, interval: float = 30.0):
         """Loop principal com renovação periódica de engines"""
@@ -400,77 +444,10 @@ class OptimizedMonitor:
 
   
 
-# Versão ainda mais otimizada para casos extremos
-class HyperFastMonitor(OptimizedMonitor):
-    """Versão para quando você precisa de velocidade máxima"""
-
-    async def monitoring_cycle(self):
-        await self.hyper_monitoring_cycle()
-
-    async def hyper_check(self, ip: str) -> Tuple[bool, Optional[str]]:
-        """Verificação híbrida ultra-rápida"""
-        # Ping e SNMP em paralelo
-        ping_task = self.fast_ping_check([ip])
-        snmp_task = self.fast_snmp_check(ip)
-        
-        ping_result, snmp_result = await asyncio.gather(
-            ping_task, snmp_task, return_exceptions=True
-        )
-        
-        is_alive_ping = False
-        if not isinstance(ping_result, Exception):
-            is_alive_ping = ping_result.get(ip, (False, 0.0))[0]
-        
-        has_snmp = not isinstance(snmp_result, Exception) and snmp_result
-        
-        # Se qualquer um funcionar, consideramos vivo
-        is_alive = is_alive_ping or has_snmp
-        snmp_desc = snmp_result.get('sysDescr', '') if has_snmp else None
-        
-        return is_alive, snmp_desc
-    
-    async def hyper_monitoring_cycle(self):
-        """Ciclo de monitoramento hiper-otimizado"""
-        ips = list(self.hosts_status.keys())
-        tasks = [self.hyper_check(ip) for ip in ips]
-        
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        async with self.lock:
-            for i, result in enumerate(results):
-                ip = ips[i]
-                if isinstance(result, Exception):
-                    continue
-                
-                is_alive, snmp_desc = result
-                self.hosts_status[ip] = HostStatus(
-                    ip=ip,
-                    is_alive=is_alive,
-                    snmp_data={'sysDescr': snmp_desc} if snmp_desc else {},
-                    last_updated=datetime.now()
-                )
-                
-                status = "🟢" if is_alive else "🔴"
-                snmp = "📊" if snmp_desc else "❌"
-                print(f"{status} {ip} {snmp}")
-
-
 
 if __name__ == "__main__":
     import sys
 
-    # mode = sys.argv[1] if len(sys.argv) > 1 else "hypers"
-    # se estiver online  e nao cosegui pegar os dados 4 relatar
-    # se estiver offline  relatar como offline
-
-    print("🏃‍♂️ Modo HYPER-RÁPIDO ativado!")
-    monitor = HyperFastMonitor()
+    print("⚡ Modo OTIMIZADO ativado!")
+    monitor = OptimizedMonitor()
     asyncio.run(monitor.run_monitoring(interval=30.0))
-    # if mode == "hyper":
-    #     print("🏃‍♂️ Modo HYPER-RÁPIDO ativado!")
-    #     monitor = HyperFastMonitor()
-    #     asyncio.run(monitor.run_monitoring(interval=30.0))
-    # else:
-    #     print("⚡ Modo OTIMIZADO ativado!")
-    #     monitor = OptimizedMonitor()
-    #     asyncio.run(monitor.run_monitoring(interval=30.0))

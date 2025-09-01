@@ -10,6 +10,11 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
     def __init__(self):
+        # Modificar mais tarde para pegar todos os dados para db
+
+        # pegar a lista de admins para enviar msg para todos
+        # self.list_to_email = ["ndondadaniel2020@gmail.com"]
+
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
         self.smtp_username = os.getenv("SMTP_USERNAME", "")
@@ -37,7 +42,6 @@ class EmailService:
         if not self.enabled:
             logger.info(f"Email alerts disabled. Would send: {subject} to {to_emails}")
             return True
-            
         try:
             # Criar mensagem
             msg = MIMEMultipart()
@@ -51,7 +55,7 @@ class EmailService:
             )
             
             msg.attach(MIMEText(body, 'html'))
-            
+
             # Enviar email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
@@ -76,9 +80,19 @@ class EmailService:
         """
         Cria o corpo do email de alerta
         """
-        status_color = "#dc3545" if status == "DOWN" else "#28a745"  # Vermelho para DOWN, Verde para UP
-        status_icon = "🔴" if status == "DOWN" else "🟢"
-        
+        if status == "SNMP DOWN":
+            status_color = "#fd7e14"  # Laranja para None
+            status_icon = "🟠"
+        elif status == "UP":
+            status_color = "#28a745"  # Verde para True
+            status_icon = "🟢"
+        elif status == "DOWN":
+            status_color = "#dc3545"  # Vermelho para False
+            status_icon = "🔴"
+        else:
+            status_color = "#6c757d"  # Cinza para outros casos
+            status_icon = "⚪"
+
         body = f"""
         <html>
         <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
