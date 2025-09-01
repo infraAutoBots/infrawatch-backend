@@ -364,8 +364,7 @@ class OptimizedMonitor:
                 endpoint_name=result.ip,
                 endpoint_ip=result.ip,
                 status="DOWN",
-                timestamp=datetime.now()
-            )
+                timestamp=datetime.now())
             logger.warning(f"📛📛📛📛📛📛 Host {result.ip} está OFFLINE com {ping_failures} falhas consecutivas de ping.")
             # add na db
             self.hosts_status[result.ip].informed = True
@@ -374,13 +373,12 @@ class OptimizedMonitor:
         if (ping_failures >= self.max_consecutive_ping_failures and result.is_alive 
             and getattr(self.hosts_status[result.ip], 'informed', False)):
             self.notification_smtp_email.send_alert_email(
-            to_emails=["ndondadaniel2020@gmail.com"],
-            subject=f"Host {result.ip} está ONLINE",
-            endpoint_name=result.ip,
-            endpoint_ip=result.ip,
-            status="UP",
-            timestamp=datetime.now()
-            )
+                to_emails=["ndondadaniel2020@gmail.com"],
+                subject=f"Host {result.ip} está ONLINE",
+                endpoint_name=result.ip,
+                endpoint_ip=result.ip,
+                status="UP",
+                timestamp=datetime.now())
             logger.info(f"✅✅✅✅✅✅ Host {result.ip} foi restaurado (PING).")
             # add na db
             self.hosts_status[result.ip].informed = False
@@ -390,22 +388,20 @@ class OptimizedMonitor:
         if (result.is_alive and snmp_failures > self.max_consecutive_snmp_failures
             and check_ip_for_snmp(self.hosts_status[result.ip])
             and (not result.snmp_data or not any(result.snmp_data.values()))
-            and not getattr(self.hosts_status[result.ip], 'snmp_informed', False)
-        ):
+            and not getattr(self.hosts_status[result.ip], 'snmp_informed', False)):
             self.notification_smtp_email.send_alert_email(
-            to_emails=["ndondadaniel2020@gmail.com"],
-            subject=f"Host {result.ip} ONLINE mas SNMP FALHOU",
-            endpoint_name=result.ip,
-            endpoint_ip=result.ip,
-            status="SNMP DOWN",
-            timestamp=datetime.now()
-            )
+                to_emails=["ndondadaniel2020@gmail.com"],
+                subject=f"Host {result.ip} ONLINE mas SNMP FALHOU",
+                endpoint_name=result.ip,
+                endpoint_ip=result.ip,
+                status="SNMP DOWN",
+                timestamp=datetime.now())
             logger.warning(f"⚠️⚠️⚠️ Host {result.ip} está ONLINE mas SNMP não respondeu.")
+            # add na db
             self.hosts_status[result.ip].snmp_informed = True
 
         # Se SNMP voltar a responder, limpa flag de alerta SNMP
-        if (result.is_alive
-            and check_ip_for_snmp(self.hosts_status[result.ip])
+        if (result.is_alive and check_ip_for_snmp(self.hosts_status[result.ip])
             and result.snmp_data and any(result.snmp_data.values())
             and getattr(self.hosts_status[result.ip], 'snmp_informed', False)):
             logger.info(f"✅✅✅ Host {result.ip} SNMP voltou a responder.")
