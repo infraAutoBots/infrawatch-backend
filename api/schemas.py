@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
 from datetime import datetime
+from enum import Enum
 
 
 
@@ -208,3 +209,133 @@ class UserListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Schemas de Alertas
+class AlertSeverityEnum(str, Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+class AlertStatusEnum(str, Enum):
+    ACTIVE = "active"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
+class AlertCategoryEnum(str, Enum):
+    INFRASTRUCTURE = "infrastructure"
+    SECURITY = "security"
+    PERFORMANCE = "performance"
+    NETWORK = "network"
+
+class AlertImpactEnum(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+class AlertBaseSchema(BaseModel):
+    """Schema base para alertas"""
+    title: str
+    description: Optional[str] = None
+    severity: AlertSeverityEnum
+    category: AlertCategoryEnum
+    system: str
+    impact: AlertImpactEnum = AlertImpactEnum.MEDIUM
+    assignee: Optional[str] = None
+    id_endpoint: Optional[int] = None
+
+class AlertCreateSchema(AlertBaseSchema):
+    """Schema para criação de alertas"""
+    pass
+
+class AlertUpdateSchema(BaseModel):
+    """Schema para atualização de alertas"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    severity: Optional[AlertSeverityEnum] = None
+    category: Optional[AlertCategoryEnum] = None
+    impact: Optional[AlertImpactEnum] = None
+    assignee: Optional[str] = None
+    status: Optional[AlertStatusEnum] = None
+
+class AlertResponseSchema(AlertBaseSchema):
+    """Schema de resposta para alertas"""
+    id: int
+    status: AlertStatusEnum
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    acknowledged_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+    duration: str
+    
+    @field_validator('updated_at', mode='before')
+    @classmethod
+    def validate_updated_at(cls, v, info):
+        """Se updated_at for None, usa created_at como fallback"""
+        if v is None and info.data:
+            return info.data.get('created_at')
+        return v
+    
+    class Config:
+        from_attributes = True
+
+class AlertLogSchema(BaseModel):
+    """Schema para logs de alertas"""
+    id: int
+    action: str
+    comment: Optional[str] = None
+    created_at: datetime
+    user: UserResponseSchemas  # Dados do usuário que realizou a ação
+    
+    class Config:
+        from_attributes = True
+
+class AlertWithLogsSchema(AlertResponseSchema):
+    """Schema de alerta com histórico de logs"""
+    alert_logs: List[AlertLogSchema] = []
+
+class AlertFiltersSchema(BaseModel):
+    """Schema para filtros de alertas"""
+    search: Optional[str] = None
+    severity: Optional[List[AlertSeverityEnum]] = None
+    status: Optional[List[AlertStatusEnum]] = None
+    category: Optional[List[AlertCategoryEnum]] = None
+    impact: Optional[List[AlertImpactEnum]] = None
+    assignee: Optional[str] = None
+    system: Optional[str] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+
+class PaginationSchema(BaseModel):
+    """Schema para paginação"""
+    page: int = 1
+    size: int = 10
+    total: int
+    pages: int
+
+class AlertListResponseSchema(BaseModel):
+    """Schema de resposta para lista paginada de alertas"""
+    success: bool = True
+    data: List[AlertResponseSchema]
+    pagination: PaginationSchema
+    filters_applied: AlertFiltersSchema
+
+class AlertStatsSchema(BaseModel):
+    """Schema para estatísticas de alertas"""
+    total_alerts: int
+    critical_active: int
+    high_active: int
+    medium_active: int
+    low_active: int
+    acknowledged: int
+    resolved_today: int
+    average_resolution_time: str  # MTTR médio
+    by_category: dict
+    by_system: dict
+
+class AlertActionSchema(BaseModel):
+    """Schema para ações nos alertas"""
+    action: str  # acknowledge, resolve, assign
+    comment: Optional[str] = None
+    assignee: Optional[str] = None
