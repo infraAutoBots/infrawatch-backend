@@ -73,7 +73,7 @@ async def create_alert(
     Requer permissão de ADMIN ou MONITOR.
     """
     _check_admin_or_monitor(logged_user)
-    
+
     new_alert = Alerts(
         title=alert_data.title,
         description=alert_data.description,

@@ -237,3 +237,84 @@ HostStatus(_id=1,
         ):
             logger.info(f"✅✅✅ Host {result.ip} SNMP voltou a responder.")
             self.hosts_status[result.ip].snmp_informed = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+    "title": "string",
+    "description": "string",
+    "severity": "critical",
+    "category": "infrastructure",
+    "system": "string",
+    "impact": "medium",
+    "assignee": "string",
+    "id_endpoint": 0
+}
+
+
+
+
+
+{
+  "ip": "127.0.0.11",
+  "interval": 30,
+  "version": "1",
+  "community": "public",
+  "port": 161,
+  "user": "",
+  "authKey": "",
+  "privKey": "",
+  'sysDescr': '1.3.6.1.2.1.1.1.0',
+  'sysName': '1.3.6.1.2.1.1.5.0',
+  'sysUpTime': '1.3.6.1.2.1.1.3.0',
+  'hrProcessorLoad': '1.3.6.1.2.1.25.3.3.1.2',
+  'memTotalReal': '1.3.6.1.4.1.2021.4.5.0',
+  'memAvailReal': '1.3.6.1.4.1.2021.4.6.0',
+  'hrStorageSize': '1.3.6.1.2.1.25.2.3.1.5',
+  'hrStorageUsed': '1.3.6.1.2.1.25.2.3.1.6'
+}
+
+
+{
+  "ip": "127.0.0.11",
+  "interval": 30,
+  "version": "1",
+  "community": "public",
+  "port": 161,
+  "user": "",
+  "authKey": "",
+  "privKey": "",
+  "sysDescr": "1.3.6.1.2.1.1.1.0",
+  "sysName": "1.3.6.1.2.1.1.5.0",
+  "sysUpTime": "1.3.6.1.2.1.1.3.0",
+  "hrProcessorLoad": "1.3.6.1.2.1.25.3.3.1.2",
+  "memTotalReal": "1.3.6.1.4.1.2021.4.5.0",
+  "memAvailReal": "1.3.6.1.4.1.2021.4.6.0",
+  "hrStorageSize": "1.3.6.1.2.1.25.2.3.1.5",
+  "hrStorageUsed": "1.3.6.1.2.1.25.2.3.1.6"
+}

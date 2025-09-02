@@ -1,5 +1,9 @@
 import os
+import sys
 import asyncio
+
+# Adicionar o diretório pai ao Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -10,11 +14,11 @@ from typing import Dict, List, Optional, Tuple
 from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget,
                                          ContextData, ObjectType, ObjectIdentity)
 
-from alert_email_service import EmailService
-from dependencies import init_session
-from models import EndPoints, EndPointsData
-from snmp_engine_pool import SNMPEnginePool, logger
-from utils import (HostStatus, print_logs, get_HostStatus,
+from monitor.alert_email_service import EmailService
+from monitor.dependencies import init_session
+from api.models import EndPoints, EndPointsData, Alerts, AlertLogs
+from monitor.snmp_engine_pool import SNMPEnginePool, logger
+from monitor.utils import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication)
 from pprint import pprint
 
@@ -43,6 +47,45 @@ async def get_snmp_engine(force_new: bool = False):
     finally:
         await snmp_pool.return_engine(engine, is_faulty)
 
+def create_alert(title: str,
+                 description: str,
+                 severity: str,
+                 category: str,
+                 system: str,
+                 impact: str,
+                 id_endpoint: int,
+                 id_user_created: int,
+                 assignee: str,
+                 session: Session):
+    """
+    Cria um novo alerta no sistema.
+    """
+
+    new_alert = Alerts(
+        title=title,
+        description=description,
+        severity=severity,
+        category=category,
+        system=system,
+        impact=impact,
+        id_endpoint=id_endpoint,
+        id_user_created=id_user_created,
+        assignee=assignee
+    )
+
+    session.add(new_alert)
+    session.commit()
+    session.refresh(new_alert)
+
+    # Log da criação
+    log_entry = AlertLogs(
+        id_alert=new_alert.id,
+        id_user=0,
+        action="created",
+        comment=f"Alerta criado: {title}"
+    )
+    session.add(log_entry)
+    session.commit()
 
 
 class OptimizedMonitor:
@@ -355,56 +398,121 @@ class OptimizedMonitor:
         ping_failures = self.hosts_status[result.ip].consecutive_ping_failures
         snmp_failures = self.hosts_status[result.ip].consecutive_snmp_failures
 
-        # Alerta por falhas de PING (host offline)   session_factory
-        if (ping_failures >= self.max_consecutive_ping_failures and not result.is_alive 
-            and not getattr(self.hosts_status[result.ip], 'informed', False)):
+        # Alerta por falhas de PING (host offline)
+        if (
+            ping_failures >= self.max_consecutive_ping_failures
+            and not result.is_alive
+            and not getattr(self.hosts_status[result.ip], 'informed', False)
+        ):
             self.notification_smtp_email.send_alert_email(
                 to_emails=["ndondadaniel2020@gmail.com"],
                 subject=f"Host {result.ip} está OFFLINE",
                 endpoint_name=result.ip,
                 endpoint_ip=result.ip,
                 status="DOWN",
-                timestamp=datetime.now())
-            logger.warning(f"📛📛📛📛📛📛 Host {result.ip} está OFFLINE com {ping_failures} falhas consecutivas de ping.")
-            # add na db
+                timestamp=datetime.now()
+            )
+            logger.warning(
+                f"📛 Host {result.ip} está OFFLINE com {ping_failures} falhas consecutivas de ping."
+            )
+            create_alert(title=f"Host {result.ip} está OFFLINE",
+                 description=f"Falhas consecutivas de ping: {ping_failures}",
+                 severity="high",
+                 category="network",
+                 system="monitoring",
+                 impact="host unreachable",
+                 id_endpoint=result._id,
+                 id_user_created=0,
+                 assignee="ndondadaniel2020@gmail.com",
+                 session=session_factory)
             self.hosts_status[result.ip].informed = True
 
-        # Recuperação de PING (host volta a ficar online)   session_factory
-        if (ping_failures >= self.max_consecutive_ping_failures and result.is_alive 
-            and getattr(self.hosts_status[result.ip], 'informed', False)):
+        # Recuperação de PING (host volta a ficar online)
+        if (
+            ping_failures >= self.max_consecutive_ping_failures
+            and result.is_alive
+            and getattr(self.hosts_status[result.ip], 'informed', False)
+        ):
             self.notification_smtp_email.send_alert_email(
                 to_emails=["ndondadaniel2020@gmail.com"],
                 subject=f"Host {result.ip} está ONLINE",
                 endpoint_name=result.ip,
                 endpoint_ip=result.ip,
                 status="UP",
-                timestamp=datetime.now())
-            logger.info(f"✅✅✅✅✅✅ Host {result.ip} foi restaurado (PING).")
-            # add na db
+                timestamp=datetime.now()
+            )
+            logger.info(f"✅ Host {result.ip} foi restaurado (PING).")
+            create_alert(title=f"Host {result.ip} foi restaurado (PING)",
+                 description=f"Ping de recuperação: {ping_failures}",
+                 severity="Low",
+                 category="network",
+                 system="monitoring",
+                 impact="host reachable",
+                 id_endpoint=result._id,
+                 id_user_created=0,
+                 assignee="ndondadaniel2020@gmail.com",
+                 session=session_factory)
             self.hosts_status[result.ip].informed = False
             self.hosts_status[result.ip].consecutive_ping_failures = 0
 
         # Host está online, mas não consegue pegar dados SNMP (e SNMP está configurado)
-        if (result.is_alive and snmp_failures > self.max_consecutive_snmp_failures
+        if (
+            result.is_alive
+            and snmp_failures > self.max_consecutive_snmp_failures
             and check_ip_for_snmp(self.hosts_status[result.ip])
             and (not result.snmp_data or not any(result.snmp_data.values()))
-            and not getattr(self.hosts_status[result.ip], 'snmp_informed', False)):
+            and not getattr(self.hosts_status[result.ip], 'snmp_informed', False)
+        ):
             self.notification_smtp_email.send_alert_email(
                 to_emails=["ndondadaniel2020@gmail.com"],
                 subject=f"Host {result.ip} ONLINE mas SNMP FALHOU",
                 endpoint_name=result.ip,
                 endpoint_ip=result.ip,
                 status="SNMP DOWN",
-                timestamp=datetime.now())
-            logger.warning(f"⚠️⚠️⚠️ Host {result.ip} está ONLINE mas SNMP não respondeu.")
-            # add na db
+                timestamp=datetime.now()
+            )
+            logger.warning(f"⚠️ Host {result.ip} está ONLINE mas SNMP não respondeu.")
+            create_alert(title=f"Host {result.ip} ONLINE mas SNMP FALHOU",
+                 description=f"Falhas consecutivas de SNMP: {snmp_failures}",
+                 severity="medium",
+                 category="network",
+                 system="monitoring",
+                 impact="host SNMP unreachable",
+                 id_endpoint=result._id,
+                 id_user_created=0,
+                 assignee="ndondadaniel2020@gmail.com",
+                 session=session_factory)
+            self.hosts_status[result.ip].consecutive_snmp_failures = 0
             self.hosts_status[result.ip].snmp_informed = True
 
         # Se SNMP voltar a responder, limpa flag de alerta SNMP
-        if (result.is_alive and check_ip_for_snmp(self.hosts_status[result.ip])
-            and result.snmp_data and any(result.snmp_data.values())
-            and getattr(self.hosts_status[result.ip], 'snmp_informed', False)):
-            logger.info(f"✅✅✅ Host {result.ip} SNMP voltou a responder.")
+        if (
+            result.is_alive
+            and check_ip_for_snmp(self.hosts_status[result.ip])
+            and result.snmp_data
+            and any(result.snmp_data.values())
+            and getattr(self.hosts_status[result.ip], 'snmp_informed', False)
+        ):
+            self.notification_smtp_email.send_alert_email(
+                to_emails=["ndondadaniel2020@gmail.com"],
+                subject=f"Host {result.ip} SNMP voltou a responder",
+                endpoint_name=result.ip,
+                endpoint_ip=result.ip,
+                status="SNMP UP",
+                timestamp=datetime.now()
+            )
+            logger.info(f"✅ Host {result.ip} SNMP voltou a responder.")
+            create_alert(title=f"Host {result.ip} SNMP voltou a responder",
+                 description=f"SNMP de recuperação: {snmp_failures}",
+                 severity="Low",
+                 category="network",
+                 system="monitoring",
+                 impact="host SNMP reachable",
+                 id_endpoint=result._id,
+                 id_user_created=0,
+                 assignee="ndondadaniel2020@gmail.com",
+                 session=session_factory)
+            self.hosts_status[result.ip].consecutive_snmp_failures = 0
             self.hosts_status[result.ip].snmp_informed = False
 
     async def run_monitoring(self, interval: float = 30.0):

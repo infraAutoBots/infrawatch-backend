@@ -72,6 +72,7 @@ class EndPoints(Base):
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     ip = Column("ip", String)
+    nickname = Column("nickname", String)
     interval = Column("interval", Integer, default=30)
     version = Column("version", String)
     community = Column("community", String)
@@ -83,11 +84,12 @@ class EndPoints(Base):
     end_points_data = relationship("EndPointsData", cascade="all, delete")
     end_points_oids = relationship("EndPointOIDs", cascade="all, delete")
 
-    def __init__(self, ip, interval, version, community, port, user, authKey, privKey, id_user):
+    def __init__(self, ip, nickname, interval, version, community, port, user, authKey, privKey, id_user):
         """
         Inicializa um novo endpoint monitorado.
         Args:
             ip (str): Endereço IP ou domínio.
+            nickname (str): Apelido do endpoint.
             interval (int): Intervalo de coleta.
             version (str): Versão SNMP.
             community (str): Comunidade SNMP.
@@ -98,6 +100,7 @@ class EndPoints(Base):
             id_user (int): ID do usuário proprietário.
         """
         self.ip = ip
+        self.nickname = nickname
         self.interval = interval
         self.version = version
         self.community = community

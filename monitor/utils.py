@@ -14,6 +14,7 @@ from pysnmp.hlapi.v3arch.asyncio import (CommunityData, UsmUserData,
 class HostStatus:
     _id: Optional[int] = None
     ip: str = ""
+    nickname: str = ""
     is_alive: bool = False
     interval: int = 0
     version: str = ""
@@ -42,8 +43,11 @@ def print_logs(result):
     failure_ping = (f"Ping: (Falhas: {result.consecutive_ping_failures})"
                     if result.consecutive_ping_failures > 0 else "")
 
-    snmp_icon = (f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}"
-                      if result.snmp_data and result.snmp_data.get('sysDescr') else "❌")
+    snmp_icon = ""
+    if check_ip_for_snmp(result):
+        snmp_icon = (f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}"
+                     if result.snmp_data and result.snmp_data.get('sysDescr') else "❌")
+
     print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | {snmp_icon} {failure_info}{failure_ping}")
 
 
@@ -64,6 +68,7 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
     return HostStatus(
         _id=row.id,
         ip=row.ip,
+        nickname=row.nickname,
         is_alive=False,
         interval=row.interval,
         version=row.version,
@@ -77,7 +82,7 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
 
 
 def check_ip_for_snmp(host: HostStatus):
-    if (host.ip and host.interval and not host.port 
+    if (host and host.ip and host.interval and not host.port 
         and not host.version and not host.community
         and not host.user and not host.authKey 
         and not host.privKey):

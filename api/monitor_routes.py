@@ -41,6 +41,7 @@ async def add_ip(
 
     new_endpoint = EndPoints(
         end_point.ip,
+        end_point.nickname,
         end_point.interval,
         end_point.version,
         end_point.community,

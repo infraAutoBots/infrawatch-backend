@@ -26,6 +26,7 @@ class EndPointSchemas(BaseModel):
     """
 
     ip: str
+    nickname: str
     interval: int
     version: str
     community: str
@@ -80,6 +81,7 @@ class AddEndPointRequest(BaseModel):
     """
     ip: str
     interval: int
+    nickname: str
     version: Optional[str]
     community: Optional[str]
     port: Optional[int] | None
