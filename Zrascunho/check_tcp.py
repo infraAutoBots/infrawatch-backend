@@ -26,7 +26,7 @@ async def check_tcp(ip: str, timeout: float = float(os.getenv("TCP_TIMEOUT", 3))
         logger.error(f"IP inválido em check_tcp: {ip}")
         return False
 
-    port_list: List[int] = [int(p) for p in os.getenv("TCP_PORTS", "80,443,3306,5432,53,161").split(",")]
+    port_list: List[int] = [80,443,3306,5432,53,161]
     for port in port_list:
         try:
             _, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout)
@@ -45,7 +45,7 @@ async def check_tcp(ip: str, timeout: float = float(os.getenv("TCP_TIMEOUT", 3))
 
 if __name__ == "__main__":
     async def main():
-        ok = await check_tcp("127.0.0.1")
+        ok = await check_tcp("dgg.gg")
         logger.info("Resultado TCP: %s", ok)
 
     asyncio.run(main())
