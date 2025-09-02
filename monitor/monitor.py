@@ -14,7 +14,6 @@ from alert_email_service import EmailService
 from dependencies import init_session
 from models import EndPoints, EndPointsData, Alerts, AlertLogs
 from snmp_engine_pool import SNMPEnginePool, logger
-from tkinter.tix import Tree
 from utils import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication)
 from pprint import pprint
@@ -131,7 +130,7 @@ def create_alert(title: str, description: str, severity: str,
 
 
 class OptimizedMonitor:
-    def __init__(self, logger = Tree, session: Session = init_session()):
+    def __init__(self, logger = False, session: Session = init_session()):
         self.hosts_status: Dict[str, HostStatus] = {}
         self.lock = asyncio.Lock()
         self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80,443,22,161").split(",")]
