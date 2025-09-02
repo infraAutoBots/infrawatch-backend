@@ -1,15 +1,14 @@
 import re
 from ipaddress import ip_address
 from schemas import AddEndPointRequest
+from fastapi import HTTPException
 
 
 
 def check_oids(end_point: AddEndPointRequest) -> bool:
     """Verifica se ha todos os oids.
-
     Args:
         end_point_oids_schemas (EndPointOIDsSchemas): O esquema dos OIDs a ser verificado.
-
     Returns:
         bool: True se todos os OIDs forem válidos, False caso contrário.
     """
@@ -23,15 +22,13 @@ def check_oids(end_point: AddEndPointRequest) -> bool:
         end_point.hrStorageSize and
         end_point.hrStorageUsed):
         return True
-
     return False
+
 
 def is_valid_ip(ip: str) -> bool:
     """Verifica se o endereço IP é válido.
-
     Args:
         ip (str): O endereço IP a ser verificado.
-
     Returns:
         bool: True se o endereço IP for válido, False caso contrário.
     """
@@ -45,10 +42,8 @@ def is_valid_ip(ip: str) -> bool:
 
 def is_valid_url(url: str) -> bool:
     """Verifica se a URL é válida.
-
     Args:
         url (str): A URL a ser verificada.
-
     Returns:
         bool: True se a URL for válida, False caso contrário.
     """
@@ -63,23 +58,18 @@ def is_valid_url(url: str) -> bool:
 
 def valid_end_point(end_point: AddEndPointRequest) -> bool:
     """Valida se o endpoint é um endereço IP ou domínio válido.
-
     Args:
         end_point_schemas (EndPointSchemas): O esquema do endpoint a ser validado.
-
     Returns:
         bool: True se o endpoint for válido, False caso contrário.
     """
 
     # Validações básicas
     if not is_valid_ip(end_point.ip) and not is_valid_url(end_point.ip):
-        return False
+        raise HTTPException(status_code=400, detail="Ip/domain inválido")
+
     if end_point.interval <= 0:
-        return False
-    if end_point.version not in ["1", "2c", "3", ""]:
-        return False
-    if end_point.community and end_point.user:
-        return False
+        raise HTTPException(status_code=400, detail="Intervalo inválido")
 
     # so ping
     if (end_point.ip and end_point.interval and not end_point.version and
@@ -102,4 +92,5 @@ def valid_end_point(end_point: AddEndPointRequest) -> bool:
         not end_point.community and end_point.port and check_oids(end_point)):
         return True
 
-    return False
+    raise HTTPException(status_code=400, detail="configuracao inválido")
+
