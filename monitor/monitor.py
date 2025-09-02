@@ -48,7 +48,7 @@ ALERT_TYPES = {
     "ping_up": {
         "title": "Host {ip} foi restaurado (PING)",
         "description": "Ping de recuperação: {failures}",
-        "severity": "Low", 
+        "severity": "low",
         "category": "network",
         "system": "monitoring",
         "impact": "host reachable",
@@ -66,7 +66,7 @@ ALERT_TYPES = {
     "snmp_up": {
         "title": "Host {ip} SNMP voltou a responder",
         "description": "SNMP de recuperação: {failures}",
-        "severity": "Low",
+        "severity": "low",
         "category": "network",
         "system": "monitoring",
         "impact": "host SNMP reachable",

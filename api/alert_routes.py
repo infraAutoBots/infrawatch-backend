@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from dependencies import init_session, verify_token
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, or_, desc, func, case, extract
-from models import Users, Alerts, AlertLogs, EndPoints
+from sqlalchemy import and_, or_, desc, func
+from models import Users, Alerts, AlertLogs
 from schemas import (
     AlertCreateSchema, AlertUpdateSchema, AlertResponseSchema,
     AlertListResponseSchema, AlertFiltersSchema, PaginationSchema,
     AlertStatsSchema, AlertActionSchema, AlertWithLogsSchema
 )
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import math
+
 
 
 alert_router = APIRouter(prefix="/alerts", tags=["alerts"], dependencies=[Depends(verify_token)])
@@ -159,8 +160,54 @@ async def list_alerts(
     offset = (page - 1) * size
     alerts = query.offset(offset).limit(size).all()
     
-    # Converter para schemas de resposta
-    alert_responses = [AlertResponseSchema.model_validate(alert) for alert in alerts]
+    # Converter para schemas de resposta com tratamento seguro para valores inválidos
+    alert_responses = []
+    
+    # Valores válidos para cada campo
+    valid_impacts = ["high", "medium", "low"]
+    valid_severities = ["critical", "high", "medium", "low"]
+    valid_categories = ["infrastructure", "security", "application", "performance", "monitoring"]
+    valid_statuses = ["active", "acknowledged", "resolved"]
+    
+    for alert in alerts:
+        try:
+            # Tenta converter diretamente, mas captura erros de validação
+            alert_response = AlertResponseSchema.model_validate(alert)
+            alert_responses.append(alert_response)
+        except Exception as e:
+            # Se falhar a validação, cria um dicionário com valores seguros
+            try:
+                # Define valores padrão
+                default_impact = "medium"
+                default_severity = "medium"
+                default_category = "infrastructure" 
+                default_status = "active"
+                
+                # Cria um dicionário com valores seguros
+                alert_dict = {
+                    "id": alert.id,
+                    "title": alert.title or "Sem título",
+                    "description": alert.description or "Sem descrição",
+                    "severity": alert.severity if hasattr(alert, "severity") and alert.severity in valid_severities else default_severity,
+                    "category": alert.category if hasattr(alert, "category") and alert.category in valid_categories else default_category,
+                    "system": alert.system or "Desconhecido",
+                    "impact": alert.impact if hasattr(alert, "impact") and alert.impact in valid_impacts else default_impact,
+                    "status": alert.status if hasattr(alert, "status") and alert.status in valid_statuses else default_status,
+                    "assignee": alert.assignee,
+                    "id_endpoint": alert.id_endpoint,
+                    "created_at": alert.created_at,
+                    "updated_at": alert.updated_at,
+                    "acknowledged_at": alert.acknowledged_at,
+                    "resolved_at": alert.resolved_at,
+                    "duration": alert.duration
+                }
+                
+                # Tenta validar com os valores corrigidos
+                alert_response = AlertResponseSchema.model_validate(alert_dict)
+                alert_responses.append(alert_response)
+            except Exception as e2:
+                print(f"Erro ao validar alerta ID {alert.id}: {e2}")
+                continue
     
     # Calcular informações de paginação
     pages = math.ceil(total / size)
@@ -170,7 +217,7 @@ async def list_alerts(
         total=total,
         pages=pages
     )
-    
+
     return AlertListResponseSchema(
         data=alert_responses,
         pagination=pagination,
@@ -449,3 +496,4 @@ async def bulk_alert_actions(
         "message": f"Ação executada em {updated_count} alertas",
         "updated_count": updated_count
     }
+
