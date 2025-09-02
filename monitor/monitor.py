@@ -1,9 +1,5 @@
 import os
-import sys
 import asyncio
-
-# Adicionar o diretório pai ao Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -14,11 +10,11 @@ from typing import Dict, List, Optional, Tuple
 from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget,
                                          ContextData, ObjectType, ObjectIdentity)
 
-from monitor.alert_email_service import EmailService
-from monitor.dependencies import init_session
-from api.models import EndPoints, EndPointsData, Alerts, AlertLogs
-from monitor.snmp_engine_pool import SNMPEnginePool, logger
-from monitor.utils import (HostStatus, print_logs, get_HostStatus,
+from alert_email_service import EmailService
+from dependencies import init_session
+from models import EndPoints, EndPointsData, Alerts, AlertLogs
+from snmp_engine_pool import SNMPEnginePool, logger
+from utils import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication)
 from pprint import pprint
 
@@ -86,6 +82,7 @@ def create_alert(title: str,
     )
     session.add(log_entry)
     session.commit()
+    print(f"#33333333333333333333333333333333333333333333333333333333Log de alerta criado: {title}")
 
 
 class OptimizedMonitor:
@@ -413,7 +410,7 @@ class OptimizedMonitor:
                 timestamp=datetime.now()
             )
             logger.warning(
-                f"📛 Host {result.ip} está OFFLINE com {ping_failures} falhas consecutivas de ping."
+                f"📛 Host <{result}> {result.ip} está OFFLINE com {ping_failures} falhas consecutivas de ping."
             )
             create_alert(title=f"Host {result.ip} está OFFLINE",
                  description=f"Falhas consecutivas de ping: {ping_failures}",
@@ -441,7 +438,7 @@ class OptimizedMonitor:
                 status="UP",
                 timestamp=datetime.now()
             )
-            logger.info(f"✅ Host {result.ip} foi restaurado (PING).")
+            logger.info(f"✅ Host <{result}> {result.ip} foi restaurado (PING).")
             create_alert(title=f"Host {result.ip} foi restaurado (PING)",
                  description=f"Ping de recuperação: {ping_failures}",
                  severity="Low",
@@ -471,7 +468,7 @@ class OptimizedMonitor:
                 status="SNMP DOWN",
                 timestamp=datetime.now()
             )
-            logger.warning(f"⚠️ Host {result.ip} está ONLINE mas SNMP não respondeu.")
+            logger.warning(f"⚠️ Host <{result}> {result.ip} está ONLINE mas SNMP não respondeu.")
             create_alert(title=f"Host {result.ip} ONLINE mas SNMP FALHOU",
                  description=f"Falhas consecutivas de SNMP: {snmp_failures}",
                  severity="medium",
@@ -501,7 +498,7 @@ class OptimizedMonitor:
                 status="SNMP UP",
                 timestamp=datetime.now()
             )
-            logger.info(f"✅ Host {result.ip} SNMP voltou a responder.")
+            logger.info(f"✅ Host <{result}> {result.ip} SNMP voltou a responder.")
             create_alert(title=f"Host {result.ip} SNMP voltou a responder",
                  description=f"SNMP de recuperação: {snmp_failures}",
                  severity="Low",
