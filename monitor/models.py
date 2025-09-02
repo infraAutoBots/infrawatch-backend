@@ -1,7 +1,8 @@
 import os
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy import (create_engine, Column, Integer, String, Boolean,
-                        Text, DateTime, ForeignKey)
+from sqlalchemy.sql import func
+from enum import Enum
 
 
 
@@ -12,6 +13,54 @@ db = create_engine(f'sqlite:///{filename}')
 
 # criar a base do banco de dados
 Base = declarative_base()
+
+
+#criar classes/tabela do seu banco de dados
+class Users(Base):
+    """
+    Modelo ORM para a tabela de usuários do sistema.
+    Representa um usuário com informações de autenticação, estado e permissões.
+    """
+    __tablename__ = 'users'
+
+    # ACCESS_LEVEL = (
+    #     ("ADMIN", 'ADMIN'),
+    #     ("MONITOR", 'MONITOR'),
+    #     ("VIEWER", 'VIEWER'),
+    # )
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    name = Column("name", String)
+    email = Column("email", String)
+    password = Column("password", String)
+    state = Column("state", Boolean)
+    last_login = Column("last_login", DateTime)
+    access_level = Column("access_level", String) # ChoiceType(choices=ACCESS_LEVEL)
+    url = Column("url", String)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __init__(self, name, email, password, state, last_login, access_level, url):
+        """
+        Inicializa um novo usuário.
+        Args:
+            name (str): Nome do usuário.
+            email (str): Email do usuário.
+            password (str): Senha criptografada.
+            state (bool): Estado ativo/inativo.
+            last_login (datetime): Último login.
+            access_level (str): Nível de acesso (ADMIN, MONITOR, VIEWER).
+            url (str): URL do usuário.
+        """
+        self.name = name
+        self.email = email
+        self.password = password
+        self.state = state
+        self.last_login = last_login
+        self.access_level = access_level
+        self.url = url
+        self.created_at = func.now()
+        self.updated_at = func.now()
 
 
 class EndPoints(Base):
@@ -63,6 +112,10 @@ class EndPoints(Base):
 
 
 class EndPointsData(Base):
+    """
+    Modelo ORM para os dados coletados dos endpoints.
+    Armazena informações de status e métricas coletadas.
+    """
     __tablename__ = 'endpoints_data'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -80,6 +133,21 @@ class EndPointsData(Base):
     # resposta
 
     def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, last_updated):
+        """
+        Inicializa um novo registro de dados coletados de endpoint.
+        Args:
+            id_end_point (int): ID do endpoint.
+            status (bool): Status do endpoint.
+            sysDescr (str): Descrição do sistema.
+            sysName (str): Nome do sistema.
+            sysUpTime (str): Tempo de atividade.
+            hrProcessorLoad (str): Carga do processador.
+            memTotalReal (str): Memória total.
+            memAvailReal (str): Memória disponível.
+            hrStorageSize (str): Tamanho do armazenamento.
+            hrStorageUsed (str): Armazenamento usado.
+            last_updated (datetime): Data da última atualização.
+        """
         self.id_end_point = id_end_point
         self.status = status
         self.sysDescr = sysDescr
@@ -94,6 +162,10 @@ class EndPointsData(Base):
 
 
 class EndPointOIDs(Base):
+    """
+    Modelo ORM para os OIDs monitorados de cada endpoint.
+    Armazena os identificadores SNMP de interesse para cada endpoint.
+    """
     __tablename__ = 'endpoints_oids'
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -108,6 +180,19 @@ class EndPointOIDs(Base):
     hrStorageUsed = Column("hrStorageUsed", String)
 
     def __init__(self, id_end_point, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed):
+        """
+        Inicializa um novo conjunto de OIDs para um endpoint.
+        Args:
+            id_end_point (int): ID do endpoint.
+            sysDescr (str): Descrição do sistema.
+            sysName (str): Nome do sistema.
+            sysUpTime (str): Tempo de atividade.
+            hrProcessorLoad (str): Carga do processador.
+            memTotalReal (str): Memória total.
+            memAvailReal (str): Memória disponível.
+            hrStorageSize (str): Tamanho do armazenamento.
+            hrStorageUsed (str): Armazenamento usado.
+        """
         self.id_end_point = id_end_point
         self.sysDescr = sysDescr
         self.sysName = sysName
@@ -119,6 +204,28 @@ class EndPointOIDs(Base):
         self.hrStorageUsed = hrStorageUsed
 
 
+class AlertSeverity(str, Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+class AlertStatus(str, Enum):
+    ACTIVE = "active"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
+class AlertCategory(str, Enum):
+    INFRASTRUCTURE = "infrastructure"
+    SECURITY = "security"
+    PERFORMANCE = "performance"
+    NETWORK = "network"
+
+class AlertImpact(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
 class Alerts(Base):
     """
     Modelo ORM para a tabela de alertas do sistema.
@@ -129,12 +236,12 @@ class Alerts(Base):
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     title = Column("title", String(255), nullable=False)
     description = Column("description", Text, nullable=True)
-    severity = Column("severity", String(50), nullable=False)
-    status = Column("status", String(50), nullable=False, default="active")
-    category = Column("category", String(50), nullable=False)
-    impact = Column("impact", String(50), nullable=False, default="medium")
-    system = Column("system", String(255), nullable=False)
-    assignee = Column("assignee", String(255), nullable=True)
+    severity = Column("severity", String(50), nullable=False)  # critical, high, medium, low
+    status = Column("status", String(50), nullable=False, default="active")  # active, acknowledged, resolved
+    category = Column("category", String(50), nullable=False)  # infrastructure, security, performance, network
+    impact = Column("impact", String(50), nullable=False, default="medium")  # high, medium, low
+    system = Column("system", String(255), nullable=False)  # Sistema/endpoint que gerou o alerta
+    assignee = Column("assignee", String(255), nullable=True)  # Responsável pelo alerta
     
     # Relacionamentos
     id_endpoint = Column("id_endpoint", Integer, ForeignKey('endpoints.id'), nullable=True)
@@ -142,10 +249,16 @@ class Alerts(Base):
     id_user_assigned = Column("id_user_assigned", Integer, ForeignKey('users.id'), nullable=True)
     
     # Timestamps
-    created_at = Column("created_at", DateTime, nullable=False)
-    updated_at = Column("updated_at", DateTime, nullable=False)
+    created_at = Column("created_at", DateTime, default=func.now(), nullable=False)
+    updated_at = Column("updated_at", DateTime, default=func.now(), server_default=func.now(), onupdate=func.now(), nullable=False)
     acknowledged_at = Column("acknowledged_at", DateTime, nullable=True)
     resolved_at = Column("resolved_at", DateTime, nullable=True)
+     
+    # Relacionamentos ORM
+    endpoint = relationship("EndPoints", backref="alerts")
+    user_created = relationship("Users", foreign_keys=[id_user_created], backref="created_alerts")
+    user_assigned = relationship("Users", foreign_keys=[id_user_assigned], backref="assigned_alerts")
+    alert_logs = relationship("AlertLogs", cascade="all, delete-orphan", backref="alert")
 
     def __init__(self, title, description, severity, category, system, impact="medium", 
                  id_endpoint=None, id_user_created=None, assignee=None):
@@ -159,10 +272,27 @@ class Alerts(Base):
         self.id_endpoint = id_endpoint
         self.id_user_created = id_user_created
         self.assignee = assignee
-        self.status = "active"
+        self.status = "active"  # Define status padrão
+        # Inicializar timestamps explicitamente com datetime atual
         now = datetime.now()
         self.created_at = now
         self.updated_at = now
+
+    @property
+    def duration(self):
+        """Calcula a duração do alerta desde a criação"""
+        from datetime import datetime
+        if self.resolved_at:
+            delta = self.resolved_at - self.created_at
+        else:
+            delta = datetime.utcnow() - self.created_at
+        
+        hours = int(delta.total_seconds() // 3600)
+        minutes = int((delta.total_seconds() % 3600) // 60)
+        
+        if hours > 0:
+            return f"{hours}h {minutes}min"
+        return f"{minutes}min"
 
 
 class AlertLogs(Base):
@@ -174,17 +304,47 @@ class AlertLogs(Base):
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     id_alert = Column("id_alert", Integer, ForeignKey('alerts.id'), nullable=False)
     id_user = Column("id_user", Integer, ForeignKey('users.id'), nullable=False)
-    action = Column("action", String(100), nullable=False)
+    action = Column("action", String(100), nullable=False)  # created, acknowledged, resolved, assigned, commented
     comment = Column("comment", Text, nullable=True)
-    created_at = Column("created_at", DateTime, nullable=False)
+    created_at = Column("created_at", DateTime, default=func.now(), nullable=False)
+
+    # Relacionamentos ORM
+    user = relationship("Users", backref="alert_actions")
 
     def __init__(self, id_alert, id_user, action, comment=None):
-        from datetime import datetime
         self.id_alert = id_alert
         self.id_user = id_user
         self.action = action
         self.comment = comment
-        self.created_at = datetime.now()
+
+
+class AlertRules(Base):
+    """
+    Modelo ORM para regras de geração automática de alertas.
+    """
+    __tablename__ = 'alert_rules'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    name = Column("name", String(255), nullable=False)
+    description = Column("description", Text, nullable=True)
+    condition = Column("condition", Text, nullable=False)  # JSON com condições
+    severity = Column("severity", String(50), nullable=False)
+    category = Column("category", String(50), nullable=False)
+    is_active = Column("is_active", Boolean, default=True)
+    id_user_created = Column("id_user_created", Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relacionamentos
+    user_created = relationship("Users", backref="alert_rules")
+
+    def __init__(self, name, description, condition, severity, category, id_user_created):
+        self.name = name
+        self.description = description
+        self.condition = condition
+        self.severity = severity
+        self.category = category
+        self.id_user_created = id_user_created
 
 
 # executar a criacao dos metadados do banco de dados
@@ -192,4 +352,5 @@ class AlertLogs(Base):
 
 # gerar bd
 # alembic revision --autogenerate -m "Initial migration"
-# alembic upgrade head
+# alembic upgrade head 
+

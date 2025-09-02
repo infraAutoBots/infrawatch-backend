@@ -81,7 +81,7 @@ class SNMPEnginePool:
     async def _dispose_engine(self, engine):
         """Descarta uma engine defeituosa"""
         try:
-            if hasattr(engine, 'transport_dispatcher'):
+            if hasattr(engine, 'transport_dispatcher') and engine.transport_dispatcher is not None:
                 engine.transport_dispatcher.close_dispatcher()
             self.engines_created -= 1
             self.faulty_engines.discard(id(engine))

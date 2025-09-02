@@ -32,8 +32,8 @@ class HostStatus:
     snmp_informed: bool = False
     consecutive_ping_failures: int = 0
     consecutive_snmp_failures: int = 0
-
-
+    
+    
 def print_logs(result):
     status_icon = "🟢" if result.is_alive else "🔴"
     
