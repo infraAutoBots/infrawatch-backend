@@ -135,15 +135,15 @@ class OptimizedMonitor:
         self.lock = asyncio.Lock()
         self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80,443,22,161").split(",")]
         
-        self.notification_smtp_email = EmailService()
+        self.alert_email = EmailService()
 
         # NOVO: Configurações de reconexão
-        self.max_consecutive_snmp_failures = 5
-        self.max_consecutive_ping_failures = 1
+        self.max_consecutive_snmp_failures = 10
+        self.max_consecutive_ping_failures = 5
         self.engine_refresh_threshold = 10  # Renova engines após X falhas globais
         self.global_failure_count = 0
         self.logger = logger
-        
+
         if session:
             data = session.query(EndPoints).all()
             for row in data:
@@ -220,7 +220,8 @@ class OptimizedMonitor:
                         last_record.sysUpTime = sysUpTime
                         
                         session.commit()
-                        logger.debug(f"Dados duplicados para endpoint {hosts._id}. Atualizando último registro com timestamp: {hosts.last_updated}")
+                        if self.logger:
+                            logger.debug(f"Dados duplicados para endpoint {hosts._id}. Atualizando último registro com timestamp: {hosts.last_updated}")
                         return
                 
                 # Dados são diferentes ou não temos histórico suficiente
@@ -241,10 +242,12 @@ class OptimizedMonitor:
                 
                 session.add(new_data)
                 session.commit()
-                logger.debug(f"Novo registro inserido para endpoint {hosts._id}")
+                if self.logger:
+                    logger.debug(f"Novo registro inserido para endpoint {hosts._id}")
                 
             except Exception as e:
-                logger.error(f"Erro ao inserir dados SNMP para endpoint {hosts._id}: {e}")
+                if self.logger:
+                    logger.error(f"Erro ao inserir dados SNMP para endpoint {hosts._id}: {e}")
                 session.rollback()
                 raise
             finally:
@@ -288,7 +291,8 @@ class OptimizedMonitor:
                 for host in hosts
             }
         except Exception as e:
-            logger.debug(f"Ping error: {e}")
+            if self.logger:
+                logger.debug(f"Ping error: {e}")
             return {ip: (False, 0.0) for ip in ips}
 
     async def fast_tcp_check(self, ip: str) -> bool:
@@ -319,7 +323,8 @@ class OptimizedMonitor:
             try:
                 return await self._perform_snmp_check(ip, force_new)
             except Exception as e:
-                logger.debug(f"SNMP tentativa {attempt + 1}/{max_retries} falhou para {ip}: {e}")
+                if self.logger:
+                    logger.debug(f"SNMP tentativa {attempt + 1}/{max_retries} falhou para {ip}: {e}")
                 
                 # Se é a última tentativa, força nova engine
                 if attempt == max_retries - 1:
@@ -355,10 +360,12 @@ class OptimizedMonitor:
                         result[oids_keys[idx]] = None
                         
                 except asyncio.TimeoutError:
-                    logger.debug(f"SNMP timeout para {ip} OID {oid}")
+                    if self.logger:
+                        logger.debug(f"SNMP timeout para {ip} OID {oid}")
                     result[oids_keys[idx]] = None
                 except Exception as e:
-                    logger.debug(f"SNMP error para {ip} OID {oid}: {e}")
+                    if self.logger:
+                        logger.debug(f"SNMP error para {ip} OID {oid}: {e}")
                     result[oids_keys[idx]] = None
                     raise  # Re-levanta para trigger do retry
             
@@ -406,7 +413,8 @@ class OptimizedMonitor:
 
         # Verifica se precisa renovar engines globalmente
         if self.global_failure_count >= self.engine_refresh_threshold:
-            logger.info("Renovando todas as engines SNMP devido a falhas globais...")
+            if self.logger:
+                logger.info("Renovando todas as engines SNMP devido a falhas globais...")
             await snmp_pool.refresh_all_engines()
             self.hosts_status[ip].consecutive_snmp_failures = 0
             self.global_failure_count = 0
@@ -428,12 +436,15 @@ class OptimizedMonitor:
             async with self.lock:
                 for i, result in enumerate(results):
                     if isinstance(result, Exception):
-                        logger.error(f"Error checking {ips[i]}: {result}")
+                        if self.logger:
+                            logger.error(f"Error checking {ips[i]}: {result}")
                         continue
-                    # print_logs(result)
+                    if self.logger:
+                        print_logs(result)
                     yield result
         except Exception as e:
-            logger.error(f"Monitoring cycle error: {e}")
+            if self.logger:
+                logger.error(f"Monitoring cycle error: {e}")
 
     async def send_alert(self, session_factory, result: HostStatus):
         """Processa notificações baseadas no estado atual do host"""
@@ -485,7 +496,7 @@ class OptimizedMonitor:
         description = alert_config["description"].format(failures=failures)
         
         # Enviar email de notificação
-        self.notification_smtp_email.send_alert_email(
+        self.alert_email.send_alert_email(
             to_emails=NOTIFICATION_CONFIG["default_email"],
             subject=title,
             endpoint_name=result.name,
@@ -511,7 +522,8 @@ class OptimizedMonitor:
                 session=session
             )
         except Exception as e:
-            logger.error(f"📛📛📛📛📛 Error creating alert for {ip}: {e}")
+            if self.logger:
+                logger.error(f"📛📛📛📛📛 Error creating alert for {ip}: {e}")
         finally:
             if session:
                 session.close()
@@ -519,13 +531,16 @@ class OptimizedMonitor:
         # Log apropriado para o tipo de evento
         log_message = f"{'✅' if 'up' in alert_type else '⚠️'} Host {ip} {alert_config['status']}"
         if 'up' in alert_type:
-            logger.info(log_message)
+            if self.logger:
+                logger.info(log_message)
         else:
-            logger.warning(log_message)
+            if self.logger:
+                logger.warning(log_message)
             
     async def run_monitoring(self, interval: float = 30.0):
         """Loop principal com renovação periódica de engines"""
-        logger.info("🚀 Iniciando monitoramento otimizado com auto-reconexão...")
+        if self.logger:
+            logger.info("🚀 Iniciando monitoramento otimizado com auto-reconexão...")
 
         session_factory = init_session
         last_engine_refresh = datetime.now()
@@ -544,7 +559,8 @@ class OptimizedMonitor:
 
             # Renovação periódica de engines (a cada 10 minutos)
             if (datetime.now() - last_engine_refresh).seconds > 600:
-                logger.info("Renovação periódica das engines SNMP...")
+                if self.logger:
+                    logger.info("Renovação periódica das engines SNMP...")
                 await snmp_pool.refresh_all_engines()
                 last_engine_refresh = datetime.now()
 
@@ -552,7 +568,8 @@ class OptimizedMonitor:
             await asyncio.sleep(sleep_time)
             await check_task
 
-            logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s | Global failures: {self.global_failure_count}")
+            if self.logger:
+                logger.info(f"Cycle completed in {elapsed:.2f}s, sleeping {sleep_time:.2f}s | Global failures: {self.global_failure_count}")
 
   
 
