@@ -250,7 +250,7 @@ class Alerts(Base):
     updated_at = Column("updated_at", DateTime, default=func.now(), server_default=func.now(), onupdate=func.now(), nullable=False)
     acknowledged_at = Column("acknowledged_at", DateTime, nullable=True)
     resolved_at = Column("resolved_at", DateTime, nullable=True)
-    
+     
     # Relacionamentos ORM
     endpoint = relationship("EndPoints", backref="alerts")
     user_created = relationship("Users", foreign_keys=[id_user_created], backref="created_alerts")
@@ -304,7 +304,7 @@ class AlertLogs(Base):
     action = Column("action", String(100), nullable=False)  # created, acknowledged, resolved, assigned, commented
     comment = Column("comment", Text, nullable=True)
     created_at = Column("created_at", DateTime, default=func.now(), nullable=False)
-    
+
     # Relacionamentos ORM
     user = relationship("Users", backref="alert_actions")
 
@@ -331,7 +331,7 @@ class AlertRules(Base):
     id_user_created = Column("id_user_created", Integer, ForeignKey('users.id'), nullable=False)
     created_at = Column("created_at", DateTime, default=func.now())
     updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
-    
+
     # Relacionamentos
     user_created = relationship("Users", backref="alert_rules")
 
@@ -343,9 +343,11 @@ class AlertRules(Base):
         self.category = category
         self.id_user_created = id_user_created
 
+
 # executar a criacao dos metadados do banco de dados
 # alembic init alembic
 
 # gerar bd
 # alembic revision --autogenerate -m "Initial migration"
 # alembic upgrade head 
+
