@@ -1,4 +1,5 @@
 import os
+import sys
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -6,15 +7,21 @@ from datetime import datetime
 from typing import List, Optional
 import logging
 
+# Adicionar o diretório api ao path para imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api'))
+
 logger = logging.getLogger(__name__)
 
 class EmailService:
-    def __init__(self):
-        # Modificar mais tarde para pegar todos os dados para db
-
-        # pegar a lista de admins para enviar msg para todos
-        # self.list_to_email = ["ndondadaniel2020@gmail.com"]
-
+    def __init__(self, db_session=None):
+        """
+        Inicializa o serviço de email.
+        Se db_session for fornecida, tentará obter configurações do banco.
+        Caso contrário, usará variáveis de ambiente como fallback.
+        """
+        self.db_session = db_session
+        
+        # Configurações padrão (fallback)
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
         self.smtp_username = os.getenv("SMTP_USERNAME", "")
@@ -22,9 +29,103 @@ class EmailService:
         self.from_email = os.getenv("FROM_EMAIL", self.smtp_username)
         self.enabled = os.getenv("EMAIL_ALERTS_ENABLED", "false").lower() == "true"
         
+        # Tentar obter configurações do banco de dados
+        self._load_config_from_db()
+        
         if not all([self.smtp_username, self.smtp_password]) and self.enabled:
             logger.warning("Email credentials not configured. Email alerts will be disabled.")
             self.enabled = False
+
+    def _load_config_from_db(self):
+        """
+        Carrega configurações de email do banco de dados
+        """
+        if not self.db_session:
+            return
+        
+        try:
+            from models import EmailConfig
+            from encryption import bcrypt_context
+            
+            # Buscar configuração ativa
+            email_config = self.db_session.query(EmailConfig).filter(
+                EmailConfig.active == True
+            ).first()
+            
+            if email_config:
+                self.smtp_server = email_config.server
+                self.smtp_port = email_config.port
+                self.smtp_username = email_config.email
+                self.from_email = email_config.email
+                
+                # A senha está criptografada no banco, mas para SMTP precisamos da senha real
+                # Por segurança, vamos manter as senhas em variáveis de ambiente
+                # e usar o banco apenas para outros dados
+                if not self.smtp_password:
+                    logger.warning("Email password not found in environment variables")
+                
+                self.enabled = True
+                logger.info(f"Email configuration loaded from database: {email_config.email}")
+            else:
+                logger.info("No active email configuration found in database, using environment variables")
+                
+        except Exception as e:
+            logger.warning(f"Failed to load email config from database: {e}")
+
+    def get_admin_emails(self) -> List[str]:
+        """
+        Obtém lista de emails de administradores do banco de dados
+        """
+        if not self.db_session:
+            # Fallback para variável de ambiente ou email padrão
+            default_emails = os.getenv("ADMIN_EMAILS", "").split(",")
+            return [email.strip() for email in default_emails if email.strip()]
+        
+        try:
+            from models import Users
+            
+            # Buscar usuários com nível ADMIN
+            admin_users = self.db_session.query(Users).filter(
+                Users.access_level == "ADMIN",
+                Users.state == True  # Apenas usuários ativos
+            ).all()
+            
+            admin_emails = [user.email for user in admin_users if user.email]
+            logger.info(f"Found {len(admin_emails)} admin emails")
+            
+            return admin_emails
+            
+        except Exception as e:
+            logger.error(f"Failed to get admin emails: {e}")
+            return []
+
+    def send_alert_to_admins(
+        self,
+        subject: str,
+        endpoint_name: str,
+        endpoint_ip: str,
+        status: str,
+        timestamp: datetime,
+        additional_info: Optional[str] = None
+    ) -> bool:
+        """
+        Envia alerta por email para todos os administradores
+        """
+        admin_emails = self.get_admin_emails()
+        
+        if not admin_emails:
+            logger.warning("No admin emails found to send alert")
+            return False
+        
+        return self.send_alert_email(
+            to_emails=admin_emails,
+            subject=subject,
+            endpoint_name=endpoint_name,
+            endpoint_ip=endpoint_ip,
+            status=status,
+            timestamp=timestamp,
+            additional_info=additional_info
+        )
 
     def send_alert_email(
         self, 
@@ -174,3 +275,33 @@ class EmailService:
         except Exception as e:
             logger.error(f"SMTP connection test failed: {e}")
             return False
+
+    def reload_config_from_db(self):
+        """
+        Recarrega configurações do banco de dados
+        """
+        self._load_config_from_db()
+
+    def set_enabled(self, enabled: bool):
+        """
+        Habilita ou desabilita o serviço de email
+        """
+        if enabled and not all([self.smtp_username, self.smtp_password]):
+            logger.warning("Cannot enable email service without credentials")
+            return False
+        
+        self.enabled = enabled
+        return True
+
+    def get_status(self) -> dict:
+        """
+        Retorna o status atual do serviço de email
+        """
+        return {
+            "enabled": self.enabled,
+            "smtp_server": self.smtp_server,
+            "smtp_port": self.smtp_port,
+            "from_email": self.from_email,
+            "has_credentials": bool(self.smtp_username and self.smtp_password),
+            "admin_count": len(self.get_admin_emails()) if self.db_session else 0
+        }

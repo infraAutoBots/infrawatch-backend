@@ -347,6 +347,90 @@ class AlertRules(Base):
         self.id_user_created = id_user_created
 
 
+class WebHookConfig(Base):
+    """
+    Modelo ORM para configuração de webhooks.
+    Representa um webhook configurado para receber notificações.
+    """
+    __tablename__ = 'webhook_config'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    url = Column("url", String, nullable=False)
+    active = Column("active", Boolean, default=True)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __init__(self, url, active=True):
+        """
+        Inicializa uma nova configuração de webhook.
+        Args:
+            url (str): URL do webhook.
+            active (bool): Se o webhook está ativo.
+        """
+        self.url = url
+        self.active = active
+
+
+class EmailConfig(Base):
+    """
+    Modelo ORM para configuração de email.
+    Representa as configurações SMTP para envio de emails.
+    """
+    __tablename__ = 'email_config'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    email = Column("email", String, nullable=False)
+    password = Column("password", String, nullable=False)
+    port = Column("port", Integer, nullable=False)
+    server = Column("server", String, nullable=False)
+    active = Column("active", Boolean, default=True)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __init__(self, email, password, port, server, active=True):
+        """
+        Inicializa uma nova configuração de email.
+        Args:
+            email (str): Email remetente.
+            password (str): Senha do email.
+            port (int): Porta SMTP.
+            server (str): Servidor SMTP.
+            active (bool): Se a configuração está ativa.
+        """
+        self.email = email
+        self.password = password
+        self.port = port
+        self.server = server
+        self.active = active
+
+
+class FailureThresholdConfig(Base):
+    """
+    Modelo ORM para configuração de limites de falhas consecutivas.
+    Representa os limites para SNMP e ping antes de disparar alertas.
+    """
+    __tablename__ = 'failure_threshold_config'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    consecutive_snmp_failures = Column("consecutive_snmp_failures", Integer, default=3)
+    consecutive_ping_failures = Column("consecutive_ping_failures", Integer, default=5)
+    active = Column("active", Boolean, default=True)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __init__(self, consecutive_snmp_failures=3, consecutive_ping_failures=5, active=True):
+        """
+        Inicializa uma nova configuração de limites de falhas.
+        Args:
+            consecutive_snmp_failures (int): Limite de falhas SNMP consecutivas.
+            consecutive_ping_failures (int): Limite de falhas de ping consecutivas.
+            active (bool): Se a configuração está ativa.
+        """
+        self.consecutive_snmp_failures = consecutive_snmp_failures
+        self.consecutive_ping_failures = consecutive_ping_failures
+        self.active = active
+
+
 # executar a criacao dos metadados do banco de dados
 # alembic init alembic
 
