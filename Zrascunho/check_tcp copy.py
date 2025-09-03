@@ -1,5 +1,7 @@
 import asyncio
 import aiohttp
+from ipaddress import ip_address
+import time
 
 async def check_tcp_or_http(endpoint: str, ports=None, timeout=2, paths=None, headers=None, verbose=False):
 
@@ -8,10 +10,8 @@ async def check_tcp_or_http(endpoint: str, ports=None, timeout=2, paths=None, he
             _, writer = await asyncio.wait_for(asyncio.open_connection(endpoint, port), timeout)
             writer.close()
             await writer.wait_closed()
-            print(f"TCP {port} OK")
             return {"port": port}
         except Exception:
-            print(f"TCP {port} falhou")
             return None
 
     ports = [80, 443, 22, 21, 25, 53, 110, 143, 3306, 5432, 6379, 27017, 8080, 8443, 3389, 5900, 161, 389, 1521, 9200]
@@ -22,8 +22,7 @@ async def check_tcp_or_http(endpoint: str, ports=None, timeout=2, paths=None, he
     for task in done:
         result = task.result()
         if result:
-            print(f"Primeira porta aberta: {result['port']}")
-            return True
+            return {"status": True, "open_port": result["port"]}
 
     # Teste HTTP/HTTPS real (sequencial, retorna no primeiro sucesso)
     paths = paths or ["/"]
@@ -34,21 +33,16 @@ async def check_tcp_or_http(endpoint: str, ports=None, timeout=2, paths=None, he
                 async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(url, timeout=timeout, allow_redirects=True) as resp:
                         if resp.status < 500:
-                            print(f"HTTP {url} OK ({resp.status})")
-                            return True
-                        else:
-                            print(f"HTTP {url} respondeu com status {resp.status}")
+                            return {"status": True, "http_success": {"url": url, "http_status": resp.status}}
             except Exception as e:
-                print(f"HTTP {url} falhou: {e}")
                 continue
-    print("Nenhuma porta ou HTTP respondeu!")
-    return False
+
+    return {"status": False, "reason": "Nenhuma porta ou HTTP respondeu"}
 
 if __name__ == "__main__":
     async def main():
-        endpoint = "dgg.gg"
-        result = await check_tcp_or_http(endpoint)
+        endpoint = "ddg.gg"
+        result = await check_tcp_or_http(endpoint, verbose=True)
         print("Resultado:", result)
 
     asyncio.run(main())
-    print("Teste")

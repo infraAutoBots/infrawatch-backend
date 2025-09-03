@@ -1,6 +1,8 @@
+from math import exp
 import os
 import asyncio
 
+import aiohttp
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from icmplib import async_multiping
@@ -133,7 +135,7 @@ class OptimizedMonitor:
     def __init__(self, logger = False, session: Session = init_session()):
         self.hosts_status: Dict[str, HostStatus] = {}
         self.lock = asyncio.Lock()
-        self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80,443,22,161").split(",")]
+        self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80, 443, 22, 21, 25, 53, 110, 143, 3306, 5432, 6379, 27017, 8080, 8443, 3389, 5900, 161, 389, 1521, 9200").split(",")]
         
         self.alert_email = EmailService()
 
@@ -295,21 +297,31 @@ class OptimizedMonitor:
                 logger.debug(f"Ping error: {e}")
             return {ip: (False, 0.0) for ip in ips}
 
-    async def fast_tcp_check(self, ip: str) -> bool:
-        async def check_port(port):
+    async def fast_tcp_check(self, endpoint: str):
+        async def check_port_first(port):
             try:
                 _, writer = await asyncio.wait_for(
-                    asyncio.open_connection(ip, port), 
-                    timeout=0.3
-                )
+                    asyncio.open_connection(endpoint, port), 1)
                 writer.close()
                 await writer.wait_closed()
                 return True
-            except:
+            except Exception:
                 return False
-        
-        tasks = [check_port(port) for port in self.tcp_ports[:2]]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Teste HTTP/HTTPS real (sequencial, retorna no primeiro sucesso)
+        paths = ["/"]
+        for path in paths:
+            for url in [f"http://{endpoint}{path}", f"https://{endpoint}{path}"]:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(url, timeout=1, allow_redirects=True) as resp:
+                            if resp.status < 500:
+                                return True
+                except Exception:
+                    continue
+
+        tasks = [asyncio.create_task(check_port_first(port)) for port in self.tcp_ports]
+        results = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         return any(r is True for r in results)
 
     async def fast_snmp_check_with_retry(self, ip: str, max_retries: int = 3):
@@ -490,20 +502,32 @@ class OptimizedMonitor:
         """Processa um alerta específico, enviando email e criando registro no banco"""
         ip = result.ip
         alert_config = ALERT_TYPES[alert_type]
-        
+
         # Formatar mensagens com os dados atuais
         title = alert_config["title"].format(ip=ip)
         description = alert_config["description"].format(failures=failures)
-        
+    
         # Enviar email de notificação
-        self.alert_email.send_alert_email(
-            to_emails=NOTIFICATION_CONFIG["default_email"],
-            subject=title,
-            endpoint_name=result.name,
-            endpoint_ip=ip,
-            status=alert_config["status"],
-            timestamp=datetime.now()
-        )
+        name = result.nickname if result.nickname else ip
+        if check_ip_for_snmp(result) and result.snmp_data:
+            name = result.snmp_data.get('sysName')
+            if not name and result.snmp_data.get('sysDescr'):
+                name = result.snmp_data['sysDescr'].split(' ')[0]
+            else:
+                name = result.nickname if result.nickname else ip
+
+        try:
+            self.alert_email.send_alert_email(
+                to_emails=NOTIFICATION_CONFIG["default_email"],
+                subject=title,
+                endpoint_name=name,
+                endpoint_ip=ip,
+                status=alert_config["status"],
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            if self.logger:
+                logger.error(f"Error sending alert email for {ip}: {e}")
 
         # Criar alerta no banco de dados
         session = None
@@ -518,12 +542,12 @@ class OptimizedMonitor:
                 impact=alert_config["impact"],
                 id_endpoint=result._id,
                 id_user_created=NOTIFICATION_CONFIG["default_user_id"],
-                assignee=NOTIFICATION_CONFIG["default_email"],
+                assignee=NOTIFICATION_CONFIG["default_email"][0],
                 session=session
             )
         except Exception as e:
             if self.logger:
-                logger.error(f"📛📛📛📛📛 Error creating alert for {ip}: {e}")
+                logger.error(f"Error creating alert for {ip}: {e}")
         finally:
             if session:
                 session.close()
