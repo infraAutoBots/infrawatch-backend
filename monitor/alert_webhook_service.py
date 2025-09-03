@@ -18,15 +18,11 @@ class WebhookService:
         # Configurações básicas (podem ser sobrescritas pelo banco de dados)
         # Tenta obter o primeiro webhook configurado no banco de dados
         db_webhook = session.query(WebHookConfig).first()
-        if db_webhook and db_webhook.url:
-            self.webhook_url = db_webhook.url
-        else:
-            self.webhook_url = os.getenv("WEBHOOK_URL", "")
-
-        self.enabled = os.getenv("WEBHOOK_ALERTS_ENABLED", "true").lower() == "true"
+        self.webhook_url = db_webhook.url if db_webhook and db_webhook.url else ""
+        self.enabled = db_webhook.active if db_webhook else False
         self.timeout = int(os.getenv("WEBHOOK_TIMEOUT", "30"))
         self.retry_attempts = int(os.getenv("WEBHOOK_RETRY_ATTEMPTS", "3"))
-        
+
         # Headers customizados
         self.headers = {
             "Content-Type": "application/json",
