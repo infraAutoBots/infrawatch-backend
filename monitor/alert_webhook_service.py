@@ -7,6 +7,8 @@ from dependencies import init_session
 from sqlalchemy.orm import Session
 from models import WebHookConfig
 
+
+
 logger = logging.getLogger(__name__)
 
 class WebhookService:
@@ -22,6 +24,7 @@ class WebhookService:
         self.enabled = db_webhook.active if db_webhook else False
         self.timeout = int(os.getenv("WEBHOOK_TIMEOUT", "30"))
         self.retry_attempts = int(os.getenv("WEBHOOK_RETRY_ATTEMPTS", "3"))
+        session.close()
 
         # Headers customizados
         self.headers = {

@@ -4,6 +4,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import List, Optional
+from models import EmailConfig
+from dependencies import init_session
 import logging
 
 
@@ -12,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class EmailService:
-    def __init__(self, db_session=None):
+    def __init__(self, session=None):
         """
         Inicializa o serviço de email.
-        Se db_session for fornecida, tentará obter configurações do banco.
+        Se session for fornecida, tentará obter configurações do banco.
         Caso contrário, usará variáveis de ambiente como fallback.
         """
-        self.db_session = db_session
+        self.session = init_session
         
         # Configurações padrão (fallback)
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -39,15 +41,13 @@ class EmailService:
         """
         Carrega configurações de email do banco de dados
         """
-        if not self.db_session:
+        if not self.session:
             return
-        
+
         try:
-            from models import EmailConfig
-            from encryption import bcrypt_context
             
             # Buscar configuração ativa
-            email_config = self.db_session.query(EmailConfig).filter(
+            email_config = self.session.query(EmailConfig).filter(
                 EmailConfig.active == True
             ).first()
             
@@ -56,7 +56,8 @@ class EmailService:
                 self.smtp_port = email_config.port
                 self.smtp_username = email_config.email
                 self.from_email = email_config.email
-                
+                self.smtp_password = email_config.password
+
                 # A senha está criptografada no banco, mas para SMTP precisamos da senha real
                 # Por segurança, vamos manter as senhas em variáveis de ambiente
                 # e usar o banco apenas para outros dados
@@ -75,7 +76,7 @@ class EmailService:
         """
         Obtém lista de emails de administradores do banco de dados
         """
-        if not self.db_session:
+        if not self.session:
             # Fallback para variável de ambiente ou email padrão
             default_emails = os.getenv("ADMIN_EMAILS", "").split(",")
             return [email.strip() for email in default_emails if email.strip()]
@@ -84,7 +85,7 @@ class EmailService:
             from models import Users
             
             # Buscar usuários com nível ADMIN
-            admin_users = self.db_session.query(Users).filter(
+            admin_users = self.session.query(Users).filter(
                 Users.access_level == "ADMIN",
                 Users.state == True  # Apenas usuários ativos
             ).all()
@@ -302,5 +303,5 @@ class EmailService:
             "smtp_port": self.smtp_port,
             "from_email": self.from_email,
             "has_credentials": bool(self.smtp_username and self.smtp_password),
-            "admin_count": len(self.get_admin_emails()) if self.db_session else 0
+            "admin_count": len(self.get_admin_emails()) if self.session else 0
         }
