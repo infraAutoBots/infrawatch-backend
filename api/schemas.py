@@ -341,3 +341,105 @@ class AlertActionSchema(BaseModel):
     action: str  # acknowledge, resolve, assign
     comment: Optional[str] = None
     assignee: Optional[str] = None
+
+
+# Schemas para Configurações
+class WebHookConfigSchema(BaseModel):
+    """Schema para configuração de webhook."""
+    url: str
+    active: Optional[bool] = True
+
+    class Config:
+        from_attributes = True
+
+
+class WebHookConfigResponse(BaseModel):
+    """Schema de resposta para configuração de webhook."""
+    id: int
+    url: str
+    active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class WebHookConfigUpdate(BaseModel):
+    """Schema para atualização de configuração de webhook."""
+    url: Optional[str] = None
+    active: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
+
+
+class EmailConfigSchema(BaseModel):
+    """Schema para configuração de email."""
+    email: str
+    password: str
+    port: int
+    server: str
+    active: Optional[bool] = True
+
+    class Config:
+        from_attributes = True
+
+
+class EmailConfigResponse(BaseModel):
+    """Schema de resposta para configuração de email."""
+    id: int
+    email: str
+    port: int
+    server: str
+    active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class EmailConfigUpdate(BaseModel):
+    """Schema para atualização de configuração de email."""
+    email: Optional[str] = None
+    password: Optional[str] = None
+    port: Optional[int] = None
+    server: Optional[str] = None
+    active: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
+
+
+class FailureThresholdConfigSchema(BaseModel):
+    """Schema para configuração de limites de falhas."""
+    consecutive_snmp_failures: Optional[int] = 3
+    consecutive_ping_failures: Optional[int] = 5
+    active: Optional[bool] = True
+
+    class Config:
+        from_attributes = True
+
+
+class FailureThresholdConfigResponse(BaseModel):
+    """Schema de resposta para configuração de limites de falhas."""
+    id: int
+    consecutive_snmp_failures: int
+    consecutive_ping_failures: int
+    active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FailureThresholdConfigUpdate(BaseModel):
+    """Schema para atualização de configuração de limites de falhas."""
+    consecutive_snmp_failures: Optional[int] = None
+    consecutive_ping_failures: Optional[int] = None
+    active: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
