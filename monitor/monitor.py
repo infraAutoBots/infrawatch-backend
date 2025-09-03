@@ -1,6 +1,7 @@
 from math import exp
 import os
 import asyncio
+from re import L
 
 import aiohttp
 from dotenv import load_dotenv
@@ -12,12 +13,14 @@ from typing import Dict, List, Optional, Tuple
 from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget,
                                          ContextData, ObjectType, ObjectIdentity)
 
+
+from utils import (HostStatus, print_logs, get_HostStatus,
+                   check_ip_for_snmp, select_snmp_authentication)
 from alert_email_service import EmailService
+from alert_webhook_service import WebhookService
 from dependencies import init_session
 from models import EndPoints, EndPointsData, Alerts, AlertLogs
 from snmp_engine_pool import SNMPEnginePool, logger
-from utils import (HostStatus, print_logs, get_HostStatus,
-                   check_ip_for_snmp, select_snmp_authentication)
 from pprint import pprint
 
 
@@ -138,10 +141,11 @@ class OptimizedMonitor:
         self.tcp_ports = [int(p) for p in os.getenv("TCP_PORTS", "80, 443, 22, 21, 25, 53, 110, 143, 3306, 5432, 6379, 27017, 8080, 8443, 3389, 5900, 161, 389, 1521, 9200").split(",")]
         
         self.alert_email = EmailService()
+        self.alert_webhook = WebhookService()
 
         # NOVO: Configurações de reconexão
         self.max_consecutive_snmp_failures = 10
-        self.max_consecutive_ping_failures = 5
+        self.max_consecutive_ping_failures = 1
         self.engine_refresh_threshold = 10  # Renova engines após X falhas globais
         self.global_failure_count = 0
         self.logger = logger
@@ -528,6 +532,18 @@ class OptimizedMonitor:
         except Exception as e:
             if self.logger:
                 logger.error(f"Error sending alert email for {ip}: {e}")
+
+        try:
+            self.alert_webhook.send_alert_webhook(
+                webhook_url=NOTIFICATION_CONFIG["webhook_url"],
+                endpoint_name=name,
+                endpoint_ip=ip,
+                status=alert_config["status"],
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            if self.logger:
+                logger.error(f"Error sending alert webhook for {ip}: {e}")
 
         # Criar alerta no banco de dados
         session = None

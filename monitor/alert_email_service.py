@@ -7,9 +7,6 @@ from datetime import datetime
 from typing import List, Optional
 import logging
 
-# Adicionar o diretório api ao path para imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'api'))
-
 logger = logging.getLogger(__name__)
 
 class EmailService:
