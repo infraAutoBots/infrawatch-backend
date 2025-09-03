@@ -1,7 +1,5 @@
-from math import exp
 import os
 import asyncio
-from re import L
 
 import aiohttp
 from dotenv import load_dotenv
@@ -19,7 +17,7 @@ from utils import (HostStatus, print_logs, get_HostStatus,
 from alert_email_service import EmailService
 from alert_webhook_service import WebhookService
 from dependencies import init_session
-from models import EndPoints, EndPointsData, Alerts, AlertLogs
+from models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig
 from snmp_engine_pool import SNMPEnginePool, logger
 from pprint import pprint
 
@@ -144,9 +142,10 @@ class OptimizedMonitor:
         self.alert_webhook = WebhookService()
 
         # NOVO: Configurações de reconexão
-        self.max_consecutive_snmp_failures = 10
-        self.max_consecutive_ping_failures = 1
-        self.engine_refresh_threshold = 10  # Renova engines após X falhas globais
+        failure_threshold = session.query(FailureThresholdConfig).first()
+        self.max_consecutive_snmp_failures = failure_threshold.snmp_failure_threshold if failure_threshold else 10
+        self.max_consecutive_ping_failures = failure_threshold.ping_failure_threshold if failure_threshold else 1
+        self.engine_refresh_threshold = 10
         self.global_failure_count = 0
         self.logger = logger
 
@@ -535,7 +534,7 @@ class OptimizedMonitor:
 
         try:
             self.alert_webhook.send_alert_webhook(
-                webhook_url=NOTIFICATION_CONFIG["webhook_url"],
+                webhook_url=None,
                 endpoint_name=name,
                 endpoint_ip=ip,
                 status=alert_config["status"],

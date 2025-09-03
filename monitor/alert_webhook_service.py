@@ -1,21 +1,29 @@
-from operator import add
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 import logging
+from dependencies import init_session
+from sqlalchemy.orm import Session
+from models import WebHookConfig
 
 logger = logging.getLogger(__name__)
 
 class WebhookService:
-    def __init__(self):
+    def __init__(self, session: Session = init_session()):
         """
         Inicializa o serviço de webhook.
         Configurações podem ser obtidas de variáveis de ambiente ou banco de dados.
         """
         # Configurações básicas (podem ser sobrescritas pelo banco de dados)
-        self.webhook_url = os.getenv("WEBHOOK_URL", "")
-        self.enabled = os.getenv("WEBHOOK_ALERTS_ENABLED", "false").lower() == "true"
+        # Tenta obter o primeiro webhook configurado no banco de dados
+        db_webhook = session.query(WebHookConfig).first()
+        if db_webhook and db_webhook.url:
+            self.webhook_url = db_webhook.url
+        else:
+            self.webhook_url = os.getenv("WEBHOOK_URL", "")
+
+        self.enabled = os.getenv("WEBHOOK_ALERTS_ENABLED", "true").lower() == "true"
         self.timeout = int(os.getenv("WEBHOOK_TIMEOUT", "30"))
         self.retry_attempts = int(os.getenv("WEBHOOK_RETRY_ATTEMPTS", "3"))
         
@@ -24,7 +32,7 @@ class WebhookService:
             "Content-Type": "application/json",
             "User-Agent": "InfraWatch-Monitor/1.0"
         }
-        
+
         # Adicionar token de autorização se configurado
         webhook_token = os.getenv("WEBHOOK_TOKEN", "")
         if webhook_token:
@@ -33,6 +41,23 @@ class WebhookService:
         if not self.webhook_url and self.enabled:
             logger.warning("Webhook URL not configured. Webhook alerts will be disabled.")
             self.enabled = False
+        self.set_webhook_url(self.webhook_url)
+
+    def _format_timestamp_for_discord(self, timestamp: datetime) -> str:
+        """
+        Formata timestamp para usar no Discord com fuso horário consistente
+        """
+        if timestamp.tzinfo is None:
+            # Se não tem timezone, assume horário local (UTC-3 para Brasil)
+            # Assume horário de Brasília (UTC-3)
+            timestamp = timestamp.replace(tzinfo=timezone(timedelta(hours=1)))
+        return timestamp.isoformat()
+
+    def _format_timestamp_for_display(self, timestamp: datetime) -> str:
+        """
+        Formata timestamp para exibição em formato brasileiro
+        """
+        return timestamp.strftime('%d/%m/%Y %H:%M:%S')
 
     def send_alert_webhook(
         self, 
@@ -49,7 +74,7 @@ class WebhookService:
         if not self.enabled and not webhook_url:
             logger.info(f"Webhook alerts disabled. Would send alert for {endpoint_name}")
             return True
-        
+
         # Usar URL fornecida ou URL padrão
         url = webhook_url or self.webhook_url
         
@@ -74,7 +99,7 @@ class WebhookService:
             success = self._send_webhook_with_retry(url, payload)
             
             if success:
-                logger.info(f"Alert webhook sent successfully to {url}")
+                logger.info(f"Alert webhook sent successfully")
             else:
                 logger.error(f"Failed to send alert webhook to {url}")
             
@@ -152,7 +177,7 @@ class WebhookService:
             "title": f"{emoji} InfraWatch Alert - {status}",
             "description": f"Alerta de monitoramento para **{endpoint_name}**",
             "color": color,
-            "timestamp": timestamp.isoformat(),
+            "timestamp": self._format_timestamp_for_discord(timestamp),
             "fields": [
                 {
                     "name": "📍 Endpoint",
@@ -171,7 +196,7 @@ class WebhookService:
                 },
                 {
                     "name": "🕐 Timestamp",
-                    "value": timestamp.strftime('%d/%m/%Y %H:%M:%S'),
+                    "value": self._format_timestamp_for_display(timestamp),
                     "inline": False
                 }
             ],
@@ -232,7 +257,7 @@ class WebhookService:
             "title": f"{emoji} InfraWatch System Status",
             "description": f"Relatório de status geral do sistema - **{overall_status.upper()}**",
             "color": color,
-            "timestamp": timestamp.isoformat(),
+            "timestamp": self._format_timestamp_for_discord(timestamp),
             "fields": [
                 {
                     "name": "📊 Total de Endpoints",
@@ -256,7 +281,7 @@ class WebhookService:
                 },
                 {
                     "name": "🕐 Timestamp",
-                    "value": timestamp.strftime('%d/%m/%Y %H:%M:%S'),
+                    "value": self._format_timestamp_for_display(timestamp),
                     "inline": True
                 },
                 {
@@ -342,16 +367,19 @@ class WebhookService:
             return False
         
         try:
+            # Obter timestamp único para usar em todo o embed
+            current_time = datetime.now()
+            
             # Cria embed rico para teste de conexão
             embed = {
                 "title": "🔧 InfraWatch Connection Test",
                 "description": "Teste de conexão do serviço de webhook",
                 "color": 0x007bff,  # Azul
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": self._format_timestamp_for_discord(current_time),
                 "fields": [
                     {
                         "name": "🕐 Timestamp",
-                        "value": datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+                        "value": self._format_timestamp_for_display(current_time),
                         "inline": True
                     },
                     {
@@ -429,29 +457,5 @@ class WebhookService:
 
 if __name__ == "__main__":
     webhook_service = WebhookService()
-    webhook_service.set_webhook_url(
-        "https://discord.com/api/webhooks/1412595075099136141/WP7CfeZ4saW39XoaDb17WrgLwhNw49r3_ufGg-wOj6dTWYmSE4A019AXLyRLtRCp5jjX"
-    )
-    webhook_service.send_alert_webhook(
-        webhook_url=None,
-        endpoint_name="Test Endpoint",
-        endpoint_ip="192.168.0.1",
-        status="UP",
-        timestamp=datetime.now()
-    )
-    webhook_service.send_alert_webhook(
-        webhook_url=None,
-        endpoint_name="Test Endpoint",
-        endpoint_ip="192.168.0.1",
-        status="SNMP DOWN",
-        timestamp=datetime.now()
-    )
-    webhook_service.send_alert_webhook(
-        webhook_url=None,
-        endpoint_name="Test Endpoint",
-        endpoint_ip="192.168.0.1",
-        status="DOWN",
-        timestamp=datetime.now()
-    )
     webhook_service.test_connection()
 

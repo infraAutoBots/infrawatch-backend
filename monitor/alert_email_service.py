@@ -1,5 +1,4 @@
 import os
-import sys
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -7,7 +6,10 @@ from datetime import datetime
 from typing import List, Optional
 import logging
 
+
+
 logger = logging.getLogger(__name__)
+
 
 class EmailService:
     def __init__(self, db_session=None):
