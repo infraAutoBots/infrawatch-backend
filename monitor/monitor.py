@@ -145,7 +145,8 @@ class OptimizedMonitor:
         failure_threshold = session.query(FailureThresholdConfig).first()
         self.max_consecutive_snmp_failures = failure_threshold.snmp_failure_threshold if failure_threshold else 10
         self.max_consecutive_ping_failures = failure_threshold.ping_failure_threshold if failure_threshold else 5
-        self.engine_refresh_threshold = 10
+        print(f"Configurações: SNMP falhas máximas: {self.max_consecutive_snmp_failures}, Ping falhas máximas: {self.max_consecutive_ping_failures}")
+        self.engine_refresh_threshold = self.max_consecutive_snmp_failures
         self.global_failure_count = 0
         self.logger = logger
 
