@@ -1,5 +1,6 @@
 import os
 import asyncio
+import re
 
 import aiohttp
 from dotenv import load_dotenv
@@ -8,9 +9,8 @@ from icmplib import async_multiping
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from typing import Dict, List, Optional, Tuple
-from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget,
+from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget, next_cmd,
                                          ContextData, ObjectType, ObjectIdentity)
-
 
 from utils import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication)
@@ -144,10 +144,12 @@ class OptimizedMonitor:
         # NOVO: Configurações de reconexão
         failure_threshold = session.query(FailureThresholdConfig).first()
         self.max_consecutive_snmp_failures = failure_threshold.snmp_failure_threshold if failure_threshold else 10
-        self.max_consecutive_ping_failures = failure_threshold.ping_failure_threshold if failure_threshold else 1
+        self.max_consecutive_ping_failures = failure_threshold.ping_failure_threshold if failure_threshold else 5
         self.engine_refresh_threshold = 10
         self.global_failure_count = 0
         self.logger = logger
+
+        print(f"Configurações: SNMP falhas máximas: {self.max_consecutive_snmp_failures}, Ping falhas máximas: {self.max_consecutive_ping_failures}")
 
         if session:
             data = session.query(EndPoints).all()
@@ -352,28 +354,119 @@ class OptimizedMonitor:
         
         return {}
 
+    def _is_table_oid(self, oid: str) -> bool:
+        """Verifica se o OID é de uma tabela baseado em padrões conhecidos"""
+        table_patterns = [
+            "1.3.6.1.2.1.25.2.3.1",  # hrStorageTable
+            "1.3.6.1.2.1.25.3.3.1",  # hrProcessorTable
+            "1.3.6.1.2.1.2.2.1",     # ifTable
+            "1.3.6.1.2.1.4.20.1",    # ipAddrTable
+        ]
+        return any(oid.startswith(pattern) for pattern in table_patterns)
+
+    async def _get_values_from_snmp_tables(self, engine, auth_data, ip: str, port: int, base_oid: str):
+        """Obtém todos os valores de uma tabela SNMP usando next_cmd (SNMP walk)"""
+        
+        values = []
+        try:
+            # Criar o transport target primeiro
+            transport_target = await UdpTransportTarget.create((ip, port), timeout=2.0, retries=1)
+            
+            # Usar next_cmd para fazer SNMP walk (equivalente ao snmpwalk)
+            from pysnmp.hlapi.v3arch.asyncio import next_cmd
+            
+            # Começar do OID base
+            current_oid = ObjectIdentity(base_oid)
+            
+            while True:
+                try:
+                    error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
+                        next_cmd(
+                            engine, 
+                            auth_data,
+                            transport_target,
+                            ContextData(),
+                            ObjectType(current_oid),
+                            lexicographicMode=False
+                        ), 
+                        timeout=3.0
+                    )
+                    
+                    if error_indication:
+                        if self.logger:
+                            logger.debug(f"SNMP walk error indication: {error_indication}")
+                        break
+                    elif error_status:
+                        if self.logger:
+                            logger.debug(f"SNMP walk error status: {error_status}")
+                        break
+                    else:
+                        # Verificar se ainda estamos na mesma tabela
+                        oid_str = str(var_binds[0][0])
+                        value = str(var_binds[0][1])
+                        
+                        if not oid_str.startswith(base_oid):
+                            break  # Saímos da tabela
+                        values.append({oid_str[len(base_oid):].lstrip('.'): value
+                        })
+
+                        # Próximo OID para continuar o walk
+                        current_oid = var_binds[0][0]
+                        
+                        # Limite de segurança para evitar loops infinitos
+                        if len(values) >= 100:
+                            if self.logger:
+                                logger.debug(f"Limite de 100 entradas atingido para tabela {base_oid}")
+                            break
+                            
+                except asyncio.TimeoutError:
+                    if self.logger:
+                        logger.debug(f"Timeout durante walk da tabela {base_oid}")
+                    break
+                except Exception as e:
+                    if self.logger:
+                        logger.debug(f"Erro durante walk da tabela {base_oid}: {e}")
+                    break
+
+            return str(values) if values else None
+
+        except Exception as e:
+            if self.logger:
+                logger.debug(f"Error getting table values for {base_oid}: {e}")
+            return None
+
     async def _perform_snmp_check(self, ip: str, force_new: bool = False):
         """Executa uma verificação SNMP"""
         async with get_snmp_engine(force_new) as engine:
             auth_data = select_snmp_authentication(self.hosts_status[ip])
             oids_values = self.hosts_status[ip].oids.values() or []
             oids_keys = list(self.hosts_status[ip].oids.keys())
+            port = self.hosts_status[ip].port or 161
             result = {}
 
             for idx, oid in enumerate(oids_values):
                 try:
-                    error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
-                        get_cmd(engine, auth_data,
-                            await UdpTransportTarget.create((ip, 161), timeout=1.0, retries=1),
-                            ContextData(), ObjectType(ObjectIdentity(oid))), 
-                        timeout=2.0
-                    )
-
-                    if not (error_indication or error_status or error_index):
-                        result[oids_keys[idx]] = str(var_binds[0][1])
+                    # Verificar se é uma tabela
+                    if self._is_table_oid(oid):
+                        # Usar next_cmd para tabelas (SNMP walk)
+                        values = await self._get_values_from_snmp_tables(engine, auth_data, ip, port, oid)
+                        result[oids_keys[idx]] = values
+                        if self.logger:
+                            logger.debug(f"OID de tabela {oid} retornou {len(values)} entradas para {ip}")
                     else:
-                        result[oids_keys[idx]] = None
-                        
+                        # Usar get_cmd para valores únicos
+                        error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
+                            get_cmd(engine, auth_data,
+                                await UdpTransportTarget.create((ip, port), timeout=1.0, retries=1),
+                                ContextData(), ObjectType(ObjectIdentity(oid))), 
+                            timeout=2.0
+                        )
+
+                        if not (error_indication or error_status or error_index):
+                            result[oids_keys[idx]] = str(var_binds[0][1])
+                        else:
+                            result[oids_keys[idx]] = None
+                            
                 except asyncio.TimeoutError:
                     if self.logger:
                         logger.debug(f"SNMP timeout para {ip} OID {oid}")
@@ -382,7 +475,7 @@ class OptimizedMonitor:
                     if self.logger:
                         logger.debug(f"SNMP error para {ip} OID {oid}: {e}")
                     result[oids_keys[idx]] = None
-                    raise  # Re-levanta para trigger do retry
+                    raise
             
             return result
 
