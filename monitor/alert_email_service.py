@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class EmailService:
-    def __init__(self, session=None):
+    def __init__(self):
         """
         Inicializa o serviço de email.
         Se session for fornecida, tentará obter configurações do banco.
@@ -29,7 +29,7 @@ class EmailService:
         self.to_emails = ""
         
         self._load_config_from_db()
-        print(self.to_emails)
+        logger.info(f"Email recipients configured: {self.to_emails}")
         
     def _load_config_from_db(self):
         """
@@ -54,15 +54,13 @@ class EmailService:
                 self.smtp_username = email_config.email
                 self.from_email = email_config.email
                 self.smtp_password = email_config.password
-                self.to_emails = ",".join(list_active_emails)
-
-                if not self.smtp_password:
-                    logger.warning("Email password not found in environment variables")
+                self.to_emails = ",".join(list_active_emails) if list_active_emails else None
 
                 logger.info(f"Email configuration loaded from database: {email_config.email}")
                 logger.info(f"Active email recipients: {len(list_active_emails)}")
             else:
-                logger.info("No active email configuration found in database, using environment variables")
+                logger.error("No active email configuration found in database")
+                return
                 
             session.close()
                 
@@ -82,9 +80,22 @@ class EmailService:
         Envia email de alerta para mudança de status de endpoint
         """
         self._load_config_from_db()
+        
+        # Verificações detalhadas
         if not self.to_emails:
             logger.error("No recipient emails configured")
             return False
+            
+        if not all([self.smtp_server, self.smtp_port, self.smtp_username, self.smtp_password]):
+            logger.error("Incomplete SMTP configuration. Missing: " + 
+                        ", ".join([
+                            "server" if not self.smtp_server else "",
+                            "port" if not self.smtp_port else "",
+                            "username" if not self.smtp_username else "",
+                            "password" if not self.smtp_password else ""
+                        ]).strip(", "))
+            return False
+            
         try:
             # Criar mensagem
             msg = MIMEMultipart()
@@ -100,14 +111,31 @@ class EmailService:
             msg.attach(MIMEText(body, 'html'))
 
             # Enviar email
+            logger.info(f"Attempting to send email to: {self.to_emails}")
+            logger.info(f"Using SMTP: {self.smtp_server}:{self.smtp_port}")
+            
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
                 server.login(self.smtp_username, self.smtp_password)
-                server.send_message(msg)
+                result = server.send_message(msg)
+                
+                if result:
+                    logger.warning(f"Some recipients failed: {result}")
+                else:
+                    logger.info("Email sent successfully to all recipients")
 
             logger.info(f"Alert email sent successfully to {self.to_emails}")
             return True
             
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP Authentication failed: {e}")
+            return False
+        except smtplib.SMTPConnectError as e:
+            logger.error(f"SMTP Connection failed: {e}")
+            return False
+        except smtplib.SMTPServerDisconnected as e:
+            logger.error(f"SMTP Server disconnected: {e}")
+            return False
         except Exception as e:
             logger.error(f"Failed to send alert email: {e}")
             return False
@@ -242,11 +270,11 @@ class EmailService:
 if __name__ == "__main__":
     # Teste rápido do serviço de email
     email_service = EmailService()
-    # email_service.send_alert_email(
-    #     subject="Teste de Alerta - InfraWatch",
-    #     endpoint_name="Servidor de Teste",
-    #     endpoint_ip="192.168.1.1",
-    #     status="UP",
-    #     timestamp=datetime.now()
-    # )
-    email_service.test_connection()
+    email_service.send_alert_email(
+        subject="Teste de Alerta - InfraWatch",
+        endpoint_name="Servidor de Teste",
+        endpoint_ip="192.168.1.1",
+        status="UP",
+        timestamp=datetime.now()
+    )
+    
