@@ -348,6 +348,8 @@ class WebHookConfigSchema(BaseModel):
     """Schema para configuração de webhook."""
     url: str
     active: Optional[bool] = True
+    timeout: Optional[int] = 30
+    access_token: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -380,7 +382,6 @@ class EmailConfigSchema(BaseModel):
     password: str
     port: int
     server: str
-    active: Optional[bool] = True
 
     class Config:
         from_attributes = True
