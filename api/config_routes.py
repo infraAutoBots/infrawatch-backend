@@ -183,21 +183,19 @@ async def create_email_config(
     check_admin_permission(current_user)
     
     try:
-        # Criptografar a senha antes de salvar
-        encrypted_password = bcrypt_context.hash(email_data.password)
         
         new_email_config = EmailConfig(
             email=email_data.email,
-            password=encrypted_password,
+            password=email_data.password,
             port=email_data.port,
             server=email_data.server,
             active=email_data.active
         )
-        
+
         session.add(new_email_config)
         session.commit()
         session.refresh(new_email_config)
-        
+
         return new_email_config
         
     except Exception as e:
