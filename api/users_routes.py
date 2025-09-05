@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 from typing import Optional
 from math import ceil
 from datetime import datetime
