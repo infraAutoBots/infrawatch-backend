@@ -145,12 +145,9 @@ class OptimizedMonitor:
         failure_threshold = session.query(FailureThresholdConfig).first()
         self.max_consecutive_snmp_failures = failure_threshold.consecutive_snmp_failures if failure_threshold else 10
         self.max_consecutive_ping_failures = failure_threshold.consecutive_ping_failures if failure_threshold else 5
-        print(f"Configurações: SNMP falhas máximas: {self.max_consecutive_snmp_failures}, Ping falhas máximas: {self.max_consecutive_ping_failures}")
         self.engine_refresh_threshold = self.max_consecutive_snmp_failures
         self.global_failure_count = 0
         self.logger = logger
-
-        print(f"Configurações: SNMP falhas máximas: {self.max_consecutive_snmp_failures}, Ping falhas máximas: {self.max_consecutive_ping_failures}")
 
         if session:
             data = session.query(EndPoints).all()
@@ -628,7 +625,6 @@ class OptimizedMonitor:
 
         try:
             self.alert_webhook.send_alert_webhook(
-                webhook_url=None,
                 endpoint_name=name,
                 endpoint_ip=ip,
                 status=alert_config["status"],
@@ -650,7 +646,7 @@ class OptimizedMonitor:
                 system=alert_config["system"],
                 impact=alert_config["impact"],
                 id_endpoint=result._id,
-                id_user_created=NOTIFICATION_CONFIG["default_user_id"],
+                id_user_created=0,
                 assignee=NOTIFICATION_CONFIG["default_email"][0],
                 session=session
             )
