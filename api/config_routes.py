@@ -48,7 +48,9 @@ async def create_webhook_config(
     try:
         new_webhook = WebHookConfig(
             url=webhook_data.url,
-            active=webhook_data.active
+            active=webhook_data.active,
+            timeout=webhook_data.timeout,
+            access_token=webhook_data.access_token
         )
         
         session.add(new_webhook)
