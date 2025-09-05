@@ -1,7 +1,7 @@
 import os
 import requests
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Dict, Any
+from typing import Optional, Dict, Any
 import logging
 from dependencies import init_session
 from sqlalchemy.orm import Session
@@ -10,6 +10,7 @@ from models import WebHookConfig
 
 
 logger = logging.getLogger(__name__)
+
 
 class WebhookService:
     def __init__(self, session: Session = init_session()):
