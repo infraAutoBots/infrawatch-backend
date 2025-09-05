@@ -32,7 +32,7 @@ class EmailService:
         
         # Tentar obter configurações do banco de dados
         self._load_config_from_db()
-        
+
         if not all([self.smtp_username, self.smtp_password]) and self.enabled:
             logger.warning("Email credentials not configured. Email alerts will be disabled.")
             self.enabled = False
@@ -47,10 +47,11 @@ class EmailService:
         try:
             
             # Buscar configuração ativa
-            email_config = self.session.query(EmailConfig).filter(
+            session = self.session()
+            email_config = session.query(EmailConfig).filter(
                 EmailConfig.active == True
             ).first()
-            
+
             if email_config:
                 self.smtp_server = email_config.server
                 self.smtp_port = email_config.port
@@ -58,9 +59,6 @@ class EmailService:
                 self.from_email = email_config.email
                 self.smtp_password = email_config.password
 
-                # A senha está criptografada no banco, mas para SMTP precisamos da senha real
-                # Por segurança, vamos manter as senhas em variáveis de ambiente
-                # e usar o banco apenas para outros dados
                 if not self.smtp_password:
                     logger.warning("Email password not found in environment variables")
                 
