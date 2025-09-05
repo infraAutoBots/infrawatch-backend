@@ -29,9 +29,8 @@ class EmailService:
         self.to_emails = ""
         
         self._load_config_from_db()
-
-        print(f"To emails: [{self.to_emails}]")
-
+        print(self.to_emails)
+        
     def _load_config_from_db(self):
         """
         Carrega configurações de email do banco de dados
@@ -45,15 +44,9 @@ class EmailService:
             email_config = session.query(EmailConfig).first()
 
             list_active_emails = []
-            
-            # Buscar usuários que querem receber alertas (alert = True/1)
             active_users = session.query(Users).filter(Users.alert == True).all()
-            
-            print(f"Usuários com alertas ativos: {len(active_users)}")
-            
             for user in active_users:
                 list_active_emails.append(user.email)
-                print(f"✅ Email ativo: {user.email}")
 
             if email_config:
                 self.smtp_server = email_config.server
@@ -61,7 +54,7 @@ class EmailService:
                 self.smtp_username = email_config.email
                 self.from_email = email_config.email
                 self.smtp_password = email_config.password
-                self.to_emails = ", ".join(list_active_emails)
+                self.to_emails = ",".join(list_active_emails)
 
                 if not self.smtp_password:
                     logger.warning("Email password not found in environment variables")
@@ -245,6 +238,7 @@ class EmailService:
             "configured_emails": self.to_emails
         }
 
+
 if __name__ == "__main__":
     # Teste rápido do serviço de email
     email_service = EmailService()
@@ -255,4 +249,4 @@ if __name__ == "__main__":
     #     status="UP",
     #     timestamp=datetime.now()
     # )
-    # email_service.test_connection()
+    email_service.test_connection()
