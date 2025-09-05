@@ -27,9 +27,7 @@ class EmailService:
         self.from_email = None
         self.smtp_password = None
         self.to_emails = ""
-        
         self._load_config_from_db()
-        logger.info(f"Email recipients configured: {self.to_emails}")
         
     def _load_config_from_db(self):
         """
@@ -55,9 +53,6 @@ class EmailService:
                 self.from_email = email_config.email
                 self.smtp_password = email_config.password
                 self.to_emails = ",".join(list_active_emails) if list_active_emails else None
-
-                logger.info(f"Email configuration loaded from database: {email_config.email}")
-                logger.info(f"Active email recipients: {len(list_active_emails)}")
             else:
                 logger.error("No active email configuration found in database")
                 return
@@ -124,7 +119,6 @@ class EmailService:
                 else:
                     logger.info("Email sent successfully to all recipients")
 
-            logger.info(f"Alert email sent successfully to {self.to_emails}")
             return True
             
         except smtplib.SMTPAuthenticationError as e:

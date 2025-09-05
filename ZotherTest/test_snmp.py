@@ -5,7 +5,7 @@ from pysnmp.hlapi.v3arch.asyncio import *
 IP = ['127.0.0.1', '127.0.0.2', '127.0.0.3']
 PORT = 161
 COMMUNITY = 'public'
-OID_CPU_LOAD = '..1.3.6.1.2.1.25.3.2.1.3.1025'  # hrProcessorLoad do seu simulador
+OID_CPU_LOAD = '1.3.6.1.2.1.1.1.0'  # hrProcessorLoad do seu simulador
 
 async def get_cpu_usage():
     errorIndication, errorStatus, errorIndex, varBinds = await get_cmd(

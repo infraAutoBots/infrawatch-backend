@@ -364,8 +364,8 @@ class OptimizedMonitor:
 
     async def _get_values_from_snmp_tables(self, engine, auth_data, ip: str, port: int, base_oid: str):
         """Obtém todos os valores de uma tabela SNMP usando next_cmd (SNMP walk)"""
-
-        values: Dict[str, str] = {}
+        
+        values = []
         try:
             # Criar o transport target primeiro
             transport_target = await UdpTransportTarget.create((ip, port), timeout=2.0, retries=1)
@@ -379,14 +379,8 @@ class OptimizedMonitor:
             while True:
                 try:
                     error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
-                        next_cmd(
-                            engine, 
-                            auth_data,
-                            transport_target,
-                            ContextData(),
-                            ObjectType(current_oid),
-                            lexicographicMode=False
-                        ), 
+                        next_cmd(engine, auth_data, transport_target, ContextData(),
+                        ObjectType(current_oid), lexicographicMode=False),
                         timeout=3.0
                     )
                     
@@ -405,8 +399,8 @@ class OptimizedMonitor:
                         
                         if not oid_str.startswith(base_oid):
                             break  # Saímos da tabela
-                        if oid_str[len(base_oid):].lstrip('.') != '':
-                            values[oid_str[len(base_oid):].lstrip('.')] = value
+                        values.append({oid_str[len(base_oid):].lstrip('.'): value
+                        })
 
                         # Próximo OID para continuar o walk
                         current_oid = var_binds[0][0]
@@ -425,13 +419,14 @@ class OptimizedMonitor:
                     if self.logger:
                         logger.debug(f"Erro durante walk da tabela {base_oid}: {e}")
                     break
-            
-            return str(values) if values.keys() else ""
+
+            return str(values) if values else None
 
         except Exception as e:
             if self.logger:
                 logger.debug(f"Error getting table values for {base_oid}: {e}")
             return None
+
 
     async def _perform_snmp_check(self, ip: str, force_new: bool = False):
         """Executa uma verificação SNMP"""
@@ -446,6 +441,7 @@ class OptimizedMonitor:
                 try:
                     # Verificar se é uma tabela
                     if self._is_table_oid(oid):
+                        pass
                         # Usar next_cmd para tabelas (SNMP walk)
                         values = await self._get_values_from_snmp_tables(engine, auth_data, ip, port, oid)
                         result[oids_keys[idx]] = values
@@ -461,7 +457,7 @@ class OptimizedMonitor:
                         )
 
                         if not (error_indication or error_status or error_index):
-                            result[oids_keys[idx]] = str(var_binds[0][1])
+                            result[oids_keys[idx]] = str(var_binds[0][1]) if var_binds[0][1] else None
                         else:
                             result[oids_keys[idx]] = None
                             
@@ -612,7 +608,6 @@ class OptimizedMonitor:
 
         try:
             self.alert_email.send_alert_email(
-                to_emails=NOTIFICATION_CONFIG["default_email"],
                 subject=title,
                 endpoint_name=name,
                 endpoint_ip=ip,
@@ -647,7 +642,7 @@ class OptimizedMonitor:
                 impact=alert_config["impact"],
                 id_endpoint=result._id,
                 id_user_created=0,
-                assignee=NOTIFICATION_CONFIG["default_email"][0],
+                assignee=0,
                 session=session
             )
         except Exception as e:
