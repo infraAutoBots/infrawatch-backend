@@ -15,6 +15,8 @@ class UserSchemas(BaseModel):
     state: Optional[bool] = True
     last_login: Optional[datetime] = None
     access_level: str
+    url: Optional[str] = None
+    alert: bool = False
 
     class Config:
         from_attributes = True
@@ -137,6 +139,7 @@ class UserResponseSchemas(BaseModel):
     access_level: str
     url: Optional[str] = None
     state: bool
+    alert: bool
     last_login: Optional[datetime] = None
     created_at: Optional[datetime] = None
 

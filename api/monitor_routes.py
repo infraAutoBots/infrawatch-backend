@@ -5,7 +5,7 @@ from models import Users, EndPoints, EndPointsData, EndPointOIDs
 from schemas import EndPointsDataSchemas, AddEndPointRequest
 from utils import valid_end_point
 from typing import Dict, Any, Optional
-from pprint import pprint
+
 
 
 monitor_router = APIRouter(prefix="/monitor", tags=["monitor"], dependencies=[Depends(verify_token)])
@@ -54,19 +54,22 @@ async def add_ip(
     session.add(new_endpoint)
     session.commit()
 
-    new_endpoint_oids = EndPointOIDs(
-        new_endpoint.id,
-        end_point.sysDescr,
-        end_point.sysName,
-        end_point.sysUpTime,
-        end_point.hrProcessorLoad,
-        end_point.memTotalReal,
-        end_point.memAvailReal,
-        end_point.hrStorageSize,
-        end_point.hrStorageUsed
-    )
-    session.add(new_endpoint_oids)
-    session.commit()
+    if (not end_point.sysDescr and not end_point.sysName and not end_point.sysUpTime and
+        not end_point.hrProcessorLoad and not end_point.memTotalReal and not end_point.memAvailReal and
+        not end_point.hrStorageSize and not end_point.hrStorageUsed):
+        new_endpoint_oids = EndPointOIDs(
+            new_endpoint.id,
+            end_point.sysDescr,
+            end_point.sysName,
+            end_point.sysUpTime,
+            end_point.hrProcessorLoad,
+            end_point.memTotalReal,
+            end_point.memAvailReal,
+            end_point.hrStorageSize,
+            end_point.hrStorageUsed
+        )
+        session.add(new_endpoint_oids)
+        session.commit()
     return {"success": True, "message": f"Endereço IP {end_point.ip} adicionado à lista de monitoramento."}
 
 

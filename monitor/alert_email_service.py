@@ -1,4 +1,3 @@
-import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -7,7 +6,6 @@ from typing import List, Optional
 from models import EmailConfig, Users
 from dependencies import init_session
 import logging
-
 
 
 logger = logging.getLogger(__name__)
@@ -22,21 +20,17 @@ class EmailService:
         """
         self.session = init_session
         
-        # Configurações padrão (fallback)
-        self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.smtp_username = os.getenv("SMTP_USERNAME", "")
-        self.smtp_password = os.getenv("SMTP_PASSWORD", "")
-        self.from_email = os.getenv("FROM_EMAIL", self.smtp_username)
-        self.enabled = os.getenv("EMAIL_AL0ERTS_ENABLED", "false").lower() == "true"
-        self.to_emails = os.getenv("ADMIN_EMAILS", "").split(",")
- 
-        # Tentar obter configurações do banco de dados
+        # Inicializar valores padrão
+        self.smtp_server = None
+        self.smtp_port = None
+        self.smtp_username = None
+        self.from_email = None
+        self.smtp_password = None
+        self.to_emails = ""
+        
         self._load_config_from_db()
 
-        if not all([self.smtp_username, self.smtp_password]) and self.enabled:
-            logger.warning("Email credentials not configured. Email alerts will be disabled.")
-            self.enabled = False
+        print(f"To emails: [{self.to_emails}]")
 
     def _load_config_from_db(self):
         """
@@ -50,10 +44,16 @@ class EmailService:
             session = self.session()
             email_config = session.query(EmailConfig).first()
 
-            list_inactive_emails = []
-            receptor_email = session.query(Users).filter(Users.alert == True).all()
-            for e in receptor_email:
-                list_inactive_emails.append(e.email)
+            list_active_emails = []
+            
+            # Buscar usuários que querem receber alertas (alert = True/1)
+            active_users = session.query(Users).filter(Users.alert == True).all()
+            
+            print(f"Usuários com alertas ativos: {len(active_users)}")
+            
+            for user in active_users:
+                list_active_emails.append(user.email)
+                print(f"✅ Email ativo: {user.email}")
 
             if email_config:
                 self.smtp_server = email_config.server
@@ -61,22 +61,23 @@ class EmailService:
                 self.smtp_username = email_config.email
                 self.from_email = email_config.email
                 self.smtp_password = email_config.password
-                self.to_emails = ", ".join(list_inactive_emails)
+                self.to_emails = ", ".join(list_active_emails)
 
                 if not self.smtp_password:
                     logger.warning("Email password not found in environment variables")
-                
-                self.enabled = True
+
                 logger.info(f"Email configuration loaded from database: {email_config.email}")
+                logger.info(f"Active email recipients: {len(list_active_emails)}")
             else:
                 logger.info("No active email configuration found in database, using environment variables")
+                
+            session.close()
                 
         except Exception as e:
             logger.warning(f"Failed to load email config from database: {e}")
 
     def send_alert_email(
-        self, 
-        to_emails: List[str], 
+        self,
         subject: str, 
         endpoint_name: str,
         endpoint_ip: str,
@@ -87,15 +88,15 @@ class EmailService:
         """
         Envia email de alerta para mudança de status de endpoint
         """
-        if not self.enabled:
-            logger.info(f"Email alerts disabled. Would send: {subject} to {to_emails}")
-            return True
+        self._load_config_from_db()
+        if not self.to_emails:
+            logger.error("No recipient emails configured")
+            return False
         try:
-            self._load_config_from_db()
             # Criar mensagem
             msg = MIMEMultipart()
             msg['From'] = self.from_email
-            msg['To'] = self.to_emails if to_emails is None else ", ".join(to_emails)
+            msg['To'] = self.to_emails 
             msg['Subject'] = subject
             
             # Corpo do email
@@ -110,8 +111,8 @@ class EmailService:
                 server.starttls()
                 server.login(self.smtp_username, self.smtp_password)
                 server.send_message(msg)
-            
-            logger.info(f"Alert email sent successfully to {to_emails}")
+
+            logger.info(f"Alert email sent successfully to {self.to_emails}")
             return True
             
         except Exception as e:
@@ -210,10 +211,7 @@ class EmailService:
         """
         Testa a conexão SMTP
         """
-        if not self.enabled:
-            logger.info("Email service is disabled")
-            return False
-            
+
         try:
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
@@ -224,30 +222,37 @@ class EmailService:
             logger.error(f"SMTP connection test failed: {e}")
             return False
 
-    def set_enabled(self, enabled: bool):
-        """
-        Habilita ou desabilita o serviço de email
-        """
-        if enabled and not all([self.smtp_username, self.smtp_password]):
-            logger.warning("Cannot enable email service without credentials")
-            return False
-        
-        self.enabled = enabled
-        return True
-
     def get_status(self) -> dict:
         """
         Retorna o status atual do serviço de email
         """
+        # Contar emails ativos
+        active_email_count = 0
+        if self.session:
+            try:
+                session = self.session()
+                active_email_count = session.query(Users).filter(Users.alert == True).count()
+                session.close()
+            except Exception as e:
+                logger.warning(f"Failed to count active emails: {e}")
+        
         return {
-            "enabled": self.enabled,
             "smtp_server": self.smtp_server,
             "smtp_port": self.smtp_port,
             "from_email": self.from_email,
             "has_credentials": bool(self.smtp_username and self.smtp_password),
-            "admin_count": len(self.get_admin_emails()) if self.session else 0
+            "active_email_count": active_email_count,
+            "configured_emails": self.to_emails
         }
 
 if __name__ == "__main__":
     # Teste rápido do serviço de email
     email_service = EmailService()
+    # email_service.send_alert_email(
+    #     subject="Teste de Alerta - InfraWatch",
+    #     endpoint_name="Servidor de Teste",
+    #     endpoint_ip="192.168.1.1",
+    #     status="UP",
+    #     timestamp=datetime.now()
+    # )
+    # email_service.test_connection()
