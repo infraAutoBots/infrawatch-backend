@@ -268,9 +268,7 @@ async def update_email_config(
             email_config.port = email_data.port
         if email_data.server is not None:
             email_config.server = email_data.server
-        if email_data.active is not None:
-            email_config.active = email_data.active
-        
+
         email_config.updated_at = func.now()
         
         session.commit()
