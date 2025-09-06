@@ -105,19 +105,10 @@ class EmailService:
             
             msg.attach(MIMEText(body, 'html'))
 
-            # Enviar email
-            logger.info(f"Attempting to send email to: {self.to_emails}")
-            logger.info(f"Using SMTP: {self.smtp_server}:{self.smtp_port}")
-            
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
                 server.login(self.smtp_username, self.smtp_password)
                 result = server.send_message(msg)
-                
-                if result:
-                    logger.warning(f"Some recipients failed: {result}")
-                else:
-                    logger.info("Email sent successfully to all recipients")
 
             return True
             

@@ -369,13 +369,8 @@ class OptimizedMonitor:
         try:
             # Criar o transport target primeiro
             transport_target = await UdpTransportTarget.create((ip, port), timeout=2.0, retries=1)
-            
-            # Usar next_cmd para fazer SNMP walk (equivalente ao snmpwalk)
-            from pysnmp.hlapi.v3arch.asyncio import next_cmd
-            
             # Começar do OID base
             current_oid = ObjectIdentity(base_oid)
-            
             while True:
                 try:
                     error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
@@ -397,7 +392,7 @@ class OptimizedMonitor:
                         oid_str = str(var_binds[0][0])
                         value = str(var_binds[0][1])
                         
-                        if not oid_str.startswith(base_oid):
+                        if not oid_str.startswith(base_oid) or not value:
                             break  # Saímos da tabela
                         values.append({oid_str[len(base_oid):].lstrip('.'): value
                         })
@@ -427,7 +422,6 @@ class OptimizedMonitor:
                 logger.debug(f"Error getting table values for {base_oid}: {e}")
             return None
 
-
     async def _perform_snmp_check(self, ip: str, force_new: bool = False):
         """Executa uma verificação SNMP"""
         async with get_snmp_engine(force_new) as engine:
@@ -441,7 +435,6 @@ class OptimizedMonitor:
                 try:
                     # Verificar se é uma tabela
                     if self._is_table_oid(oid):
-                        pass
                         # Usar next_cmd para tabelas (SNMP walk)
                         values = await self._get_values_from_snmp_tables(engine, auth_data, ip, port, oid)
                         result[oids_keys[idx]] = values
