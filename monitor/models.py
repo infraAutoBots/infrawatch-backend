@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import column, create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 from enum import Enum
@@ -131,10 +131,13 @@ class EndPointsData(Base):
     memAvailReal = Column("memAvailReal", String)
     hrStorageSize = Column("hrStorageSize", String)
     hrStorageUsed = Column("hrStorageUsed", String)
+    ifOperStatus = Column("ifOperStatus", String)
+    ifInOctets = Column("ifInOctets", String)
+    ifOutOctets = Column("ifOutOctets", String)
     last_updated = Column("last_updated", DateTime)
     # resposta
 
-    def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, last_updated):
+    def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, ifOperStatus, ifInOctets, ifOutOctets, last_updated):
         """
         Inicializa um novo registro de dados coletados de endpoint.
         Args:
@@ -148,6 +151,9 @@ class EndPointsData(Base):
             memAvailReal (str): Memória disponível.
             hrStorageSize (str): Tamanho do armazenamento.
             hrStorageUsed (str): Armazenamento usado.
+            ifOperStatus (str): Status operacional das interfaces.
+            ifInOctets (str): Tráfego recebido das interfaces.
+            ifOutOctets (str): Tráfego transmitido das interfaces.
             last_updated (datetime): Data da última atualização.
         """
         self.id_end_point = id_end_point
@@ -160,6 +166,9 @@ class EndPointsData(Base):
         self.memAvailReal = memAvailReal
         self.hrStorageSize = hrStorageSize
         self.hrStorageUsed = hrStorageUsed
+        self.ifOperStatus = ifOperStatus
+        self.ifInOctets = ifInOctets
+        self.ifOutOctets = ifOutOctets
         self.last_updated = last_updated
 
 
@@ -180,8 +189,11 @@ class EndPointOIDs(Base):
     memAvailReal = Column("memAvailReal", String)
     hrStorageSize = Column("hrStorageSize", String)
     hrStorageUsed = Column("hrStorageUsed", String)
+    ifOperStatus = Column("ifOperStatus", String)
+    ifInOctets = Column("ifInOctets", String)
+    ifOutOctets = Column("ifOutOctets", String)
 
-    def __init__(self, id_end_point, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed):
+    def __init__(self, id_end_point, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, ifOperStatus, ifInOctets, ifOutOctets):
         """
         Inicializa um novo conjunto de OIDs para um endpoint.
         Args:
@@ -194,6 +206,9 @@ class EndPointOIDs(Base):
             memAvailReal (str): Memória disponível.
             hrStorageSize (str): Tamanho do armazenamento.
             hrStorageUsed (str): Armazenamento usado.
+            ifOperStatus (str): Status operacional das interfaces.
+            ifInOctets (str): Tráfego recebido das interfaces.
+            ifOutOctets (str): Tráfego transmitido das interfaces.
         """
         self.id_end_point = id_end_point
         self.sysDescr = sysDescr
@@ -204,6 +219,9 @@ class EndPointOIDs(Base):
         self.memAvailReal = memAvailReal
         self.hrStorageSize = hrStorageSize
         self.hrStorageUsed = hrStorageUsed
+        self.ifOperStatus = ifOperStatus
+        self.ifInOctets = ifInOctets
+        self.ifOutOctets = ifOutOctets
 
 
 class AlertSeverity(str, Enum):

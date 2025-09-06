@@ -54,9 +54,12 @@ class EndPointsDataSchemas(BaseModel):
     memAvailReal: Optional[str]
     hrStorageSize: Optional[List[Dict[str, str]]]
     hrStorageUsed: Optional[List[Dict[str, str]]]
+    ifOperStatus: Optional[List[Dict[str, str]]]
+    ifInOctets: Optional[List[Dict[str, str]]]
+    ifOutOctets: Optional[List[Dict[str, str]]]
     last_updated: Optional[datetime]
 
-    @field_validator('hrProcessorLoad', 'hrStorageSize', 'hrStorageUsed', mode='before')
+    @field_validator('hrProcessorLoad', 'hrStorageSize', 'hrStorageUsed', 'ifOperStatus', 'ifInOctets', 'ifOutOctets', mode='before')
     @classmethod
     def parse_json_or_list(cls, v):
         """
@@ -96,6 +99,9 @@ class EndPointOIDsSchemas(BaseModel):
     memAvailReal: Optional[str]
     hrStorageSize: Optional[str]
     hrStorageUsed: Optional[str]
+    ifOperStatus: Optional[str]
+    ifInOctets: Optional[str]
+    ifOutOctets: Optional[str]
 
     class Config:
         from_attributes = True
@@ -122,6 +128,9 @@ class AddEndPointRequest(BaseModel):
     memAvailReal: Optional[str]
     hrStorageSize: Optional[str]
     hrStorageUsed: Optional[str]
+    ifOperStatus: Optional[str]
+    ifInOctets: Optional[str]
+    ifOutOctets: Optional[str]
 
     class Config:
         from_attributes = True

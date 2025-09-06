@@ -56,17 +56,21 @@ async def add_ip(
 
     if (not end_point.sysDescr and not end_point.sysName and not end_point.sysUpTime and
         not end_point.hrProcessorLoad and not end_point.memTotalReal and not end_point.memAvailReal and
-        not end_point.hrStorageSize and not end_point.hrStorageUsed):
+        not end_point.hrStorageSize and not end_point.hrStorageUsed and not end_point.ifOperStatus and
+        not end_point.ifInOctets and not end_point.ifOutOctets):
         new_endpoint_oids = EndPointOIDs(
             new_endpoint.id,
-            end_point.sysDescr,
-            end_point.sysName,
-            end_point.sysUpTime,
-            end_point.hrProcessorLoad,
-            end_point.memTotalReal,
-            end_point.memAvailReal,
-            end_point.hrStorageSize,
-            end_point.hrStorageUsed
+            end_point.sysDescr or "1.3.6.1.2.1.1.1.0",
+            end_point.sysName or "1.3.6.1.2.1.1.5.0",
+            end_point.sysUpTime or "1.3.6.1.2.1.1.3.0",
+            end_point.hrProcessorLoad or "1.3.6.1.2.1.25.3.3.1.2",
+            end_point.memTotalReal or "1.3.6.1.4.1.2021.4.5.0",
+            end_point.memAvailReal or "1.3.6.1.4.1.2021.4.6.0",
+            end_point.hrStorageSize or "1.3.6.1.2.1.25.2.3.1.5",
+            end_point.hrStorageUsed or "1.3.6.1.2.1.25.2.3.1.6",
+            end_point.ifOperStatus or "1.3.6.1.2.1.2.2.1.8",
+            end_point.ifInOctets or "1.3.6.1.2.1.2.2.1.10",
+            end_point.ifOutOctets or "1.3.6.1.2.1.2.2.1.16"
         )
         session.add(new_endpoint_oids)
         session.commit()

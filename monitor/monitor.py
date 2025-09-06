@@ -167,6 +167,9 @@ class OptimizedMonitor:
                 memAvailReal = hosts.snmp_data.get("memAvailReal") if hosts.snmp_data else None
                 hrStorageSize = hosts.snmp_data.get("hrStorageSize") if hosts.snmp_data else None
                 hrStorageUsed = hosts.snmp_data.get("hrStorageUsed") if hosts.snmp_data else None
+                ifOperStatus = hosts.snmp_data.get("ifOperStatus") if hosts.snmp_data else None
+                ifInOctets = hosts.snmp_data.get("ifInOctets") if hosts.snmp_data else None
+                ifOutOctets = hosts.snmp_data.get("ifOutOctets") if hosts.snmp_data else None
     
                 # Buscar os dois últimos registros para este endpoint, ordenados por data (mais recente primeiro)
                 last_records = session.query(EndPointsData)\
@@ -190,7 +193,10 @@ class OptimizedMonitor:
                         record.memTotalReal == new_data["memTotalReal"] and
                         record.memAvailReal == new_data["memAvailReal"] and
                         record.hrStorageSize == new_data["hrStorageSize"] and
-                        record.hrStorageUsed == new_data["hrStorageUsed"]
+                        record.hrStorageUsed == new_data["hrStorageUsed"] and
+                        record.ifOperStatus == new_data["ifOperStatus"] and
+                        record.ifInOctets == new_data["ifInOctets"] and
+                        record.ifOutOctets == new_data["ifOutOctets"]
                     )
     
                 # Dados atuais para comparação
@@ -203,7 +209,10 @@ class OptimizedMonitor:
                     "memTotalReal": memTotalReal,
                     "memAvailReal": memAvailReal,
                     "hrStorageSize": hrStorageSize,
-                    "hrStorageUsed": hrStorageUsed
+                    "hrStorageUsed": hrStorageUsed,
+                    "ifOperStatus": ifOperStatus,
+                    "ifInOctets": ifInOctets,
+                    "ifOutOctets": ifOutOctets
                 }
     
                 # Verificar se temos pelo menos um registro anterior
@@ -239,6 +248,9 @@ class OptimizedMonitor:
                     memAvailReal=memAvailReal,
                     hrStorageSize=hrStorageSize,
                     hrStorageUsed=hrStorageUsed,
+                    ifOperStatus=ifOperStatus,
+                    ifInOctets=ifInOctets,
+                    ifOutOctets=ifOutOctets,
                     last_updated=hosts.last_updated
                 )
                 
@@ -354,7 +366,7 @@ class OptimizedMonitor:
         table_patterns = [
             "1.3.6.1.2.1.25.2.3.1",  # hrStorageTable
             "1.3.6.1.2.1.25.3.3.1",  # hrProcessorTable
-            "1.3.6.1.2.1.2.2.1",     # ifTable
+            "1.3.6.1.2.1.2.2.1",     # ifTable (includes ifOperStatus, ifInOctets, ifOutOctets)
             "1.3.6.1.2.1.4.20.1",    # ipAddrTable
         ]
         return any(oid.startswith(pattern) for pattern in table_patterns)
