@@ -471,6 +471,47 @@ class FailureThresholdConfigResponse(BaseModel):
         from_attributes = True
 
 
+class PerformanceThresholdsSchemas(BaseModel):
+    """
+    Schema para configuração de limites de performance.
+    """
+    metric_type: str
+    warning_threshold: int
+    critical_threshold: int
+    enabled: bool = True
+
+    class Config:
+        from_attributes = True
+
+
+class PerformanceThresholdsResponse(BaseModel):
+    """
+    Schema para resposta de configuração de limites de performance.
+    """
+    id: int
+    metric_type: str
+    warning_threshold: int
+    critical_threshold: int
+    enabled: bool
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class PerformanceThresholdsUpdate(BaseModel):
+    """
+    Schema para atualização de configuração de limites de performance.
+    """
+    warning_threshold: Optional[int] = None
+    critical_threshold: Optional[int] = None
+    enabled: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
+
+
 class FailureThresholdConfigUpdate(BaseModel):
     """Schema para atualização de configuração de limites de falhas."""
     consecutive_snmp_failures: Optional[int] = None

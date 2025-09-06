@@ -4,7 +4,7 @@ from sqlalchemy import func
 from typing import Optional, List
 from datetime import datetime
 
-from models import Users, WebHookConfig, EmailConfig, FailureThresholdConfig
+from models import Users, WebHookConfig, EmailConfig, FailureThresholdConfig, PerformanceThresholds
 from dependencies import init_session, verify_token
 from encryption import bcrypt_context
 from schemas import (
@@ -16,7 +16,10 @@ from schemas import (
     EmailConfigUpdate,
     FailureThresholdConfigSchema,
     FailureThresholdConfigResponse,
-    FailureThresholdConfigUpdate
+    FailureThresholdConfigUpdate,
+    PerformanceThresholdsSchemas,
+    PerformanceThresholdsResponse,
+    PerformanceThresholdsUpdate
 )
 
 
@@ -463,12 +466,213 @@ async def get_active_configs(
         active_webhook = session.query(WebHookConfig).filter(WebHookConfig.active == True).first()
         active_email = session.query(EmailConfig).filter(EmailConfig.active == True).first()
         active_threshold = session.query(FailureThresholdConfig).filter(FailureThresholdConfig.active == True).first()
+        performance_thresholds = session.query(PerformanceThresholds).all()
         
         return {
             "webhook": active_webhook,
             "email": active_email,
-            "failure_threshold": active_threshold
+            "failure_threshold": active_threshold,
+            "performance_thresholds": performance_thresholds
         }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching active configs: {str(e)}")
+
+
+# =============================================================================
+# ROTAS DE PERFORMANCE THRESHOLDS
+# =============================================================================
+
+@config_router.post("/performance-thresholds", response_model=PerformanceThresholdsResponse)
+async def create_performance_threshold(
+    threshold_data: PerformanceThresholdsSchemas,
+    session: Session = Depends(init_session),
+    current_user: Users = Depends(verify_token)
+):
+    """
+    Cria uma nova configuração de limite de performance.
+    Requer permissão de administrador.
+    """
+    check_admin_permission(current_user)
+    
+    try:
+        # Verificar se já existe configuração para este tipo de métrica
+        existing = session.query(PerformanceThresholds).filter(
+            PerformanceThresholds.metric_type == threshold_data.metric_type
+        ).first()
+        
+        if existing:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Performance threshold for {threshold_data.metric_type} already exists"
+            )
+        
+        new_threshold = PerformanceThresholds(
+            metric_type=threshold_data.metric_type,
+            warning_threshold=threshold_data.warning_threshold,
+            critical_threshold=threshold_data.critical_threshold,
+            enabled=threshold_data.enabled
+        )
+        
+        session.add(new_threshold)
+        session.commit()
+        session.refresh(new_threshold)
+        
+        return new_threshold
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating performance threshold: {str(e)}")
+
+
+@config_router.get("/performance-thresholds", response_model=List[PerformanceThresholdsResponse])
+async def get_performance_thresholds(
+    session: Session = Depends(init_session),
+    current_user: Users = Depends(verify_token)
+):
+    """
+    Obtém todas as configurações de limites de performance.
+    """
+    try:
+        thresholds = session.query(PerformanceThresholds).all()
+        return thresholds
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching performance thresholds: {str(e)}")
+
+
+@config_router.get("/performance-thresholds/{metric_type}", response_model=PerformanceThresholdsResponse)
+async def get_performance_threshold_by_type(
+    metric_type: str,
+    session: Session = Depends(init_session),
+    current_user: Users = Depends(verify_token)
+):
+    """
+    Obtém configuração de limite de performance por tipo de métrica.
+    """
+    try:
+        threshold = session.query(PerformanceThresholds).filter(
+            PerformanceThresholds.metric_type == metric_type
+        ).first()
+        
+        if not threshold:
+            raise HTTPException(status_code=404, detail=f"Performance threshold for {metric_type} not found")
+        
+        return threshold
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching performance threshold: {str(e)}")
+
+
+@config_router.put("/performance-thresholds/{threshold_id}", response_model=PerformanceThresholdsResponse)
+async def update_performance_threshold(
+    threshold_id: int,
+    threshold_update: PerformanceThresholdsUpdate,
+    session: Session = Depends(init_session),
+    current_user: Users = Depends(verify_token)
+):
+    """
+    Atualiza uma configuração de limite de performance.
+    Requer permissão de administrador.
+    """
+    check_admin_permission(current_user)
+    
+    try:
+        threshold = session.query(PerformanceThresholds).filter(
+            PerformanceThresholds.id == threshold_id
+        ).first()
+        
+        if not threshold:
+            raise HTTPException(status_code=404, detail="Performance threshold not found")
+        
+        # Atualizar apenas os campos fornecidos
+        if threshold_update.warning_threshold is not None:
+            threshold.warning_threshold = threshold_update.warning_threshold
+        if threshold_update.critical_threshold is not None:
+            threshold.critical_threshold = threshold_update.critical_threshold
+        if threshold_update.enabled is not None:
+            threshold.enabled = threshold_update.enabled
+        
+        threshold.updated_at = datetime.now()
+        
+        session.commit()
+        session.refresh(threshold)
+        
+        return threshold
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating performance threshold: {str(e)}")
+
+
+@config_router.delete("/performance-thresholds/{threshold_id}")
+async def delete_performance_threshold(
+    threshold_id: int,
+    session: Session = Depends(init_session),
+    current_user: Users = Depends(verify_token)
+):
+    """
+    Remove uma configuração de limite de performance.
+    Requer permissão de administrador.
+    """
+    check_admin_permission(current_user)
+    
+    try:
+        threshold = session.query(PerformanceThresholds).filter(
+            PerformanceThresholds.id == threshold_id
+        ).first()
+        
+        if not threshold:
+            raise HTTPException(status_code=404, detail="Performance threshold not found")
+        
+        session.delete(threshold)
+        session.commit()
+        
+        return {"success": True, "message": f"Performance threshold for {threshold.metric_type} deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting performance threshold: {str(e)}")
+
+
+@config_router.post("/performance-thresholds/reset-defaults")
+async def reset_default_performance_thresholds(
+    session: Session = Depends(init_session),
+    current_user: Users = Depends(verify_token)
+):
+    """
+    Restaura os limites padrão de performance.
+    Requer permissão de administrador.
+    """
+    check_admin_permission(current_user)
+    
+    try:
+        # Remover configurações existentes
+        session.query(PerformanceThresholds).delete()
+        
+        # Criar configurações padrão
+        default_thresholds = [
+            PerformanceThresholds('cpu', 80, 90, True),
+            PerformanceThresholds('memory', 85, 95, True),
+            PerformanceThresholds('storage', 85, 95, True),
+            PerformanceThresholds('network', 80, 95, True)
+        ]
+        
+        for threshold in default_thresholds:
+            session.add(threshold)
+        
+        session.commit()
+        
+        return {"success": True, "message": "Default performance thresholds restored successfully"}
+        
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error resetting default thresholds: {str(e)}")

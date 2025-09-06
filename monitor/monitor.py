@@ -20,6 +20,9 @@ from alert_webhook_service import WebhookService
 from dependencies import init_session
 from models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig
 from snmp_engine_pool import SNMPEnginePool, logger
+from performance_alerts import (should_alert_cpu, should_alert_memory, 
+                               should_alert_storage, should_alert_network,
+                               initialize_default_thresholds)
 from pprint import pprint
 
 
@@ -145,6 +148,12 @@ class OptimizedMonitor:
         self.engine_refresh_threshold = self.max_consecutive_snmp_failures
         self.global_failure_count = 0
         self.logger = logger
+        
+        # Performance alerts tracking
+        self._last_performance_alerts = {}
+        
+        # Inicializar thresholds padrão
+        initialize_default_thresholds(session)
 
         if session:
             data = session.query(EndPoints).all()
@@ -511,6 +520,9 @@ class OptimizedMonitor:
         if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
             if snmp_data and any(snmp_data.values()):
                 self.hosts_status[ip].consecutive_snmp_failures = 0
+                # Guardar dados anteriores para comparação de performance
+                if hasattr(self.hosts_status[ip], 'snmp_data') and self.hosts_status[ip].snmp_data:
+                    self.hosts_status[ip].previous_snmp_data = self.hosts_status[ip].snmp_data
             else:
                 self.hosts_status[ip].consecutive_snmp_failures += 1
                 self.global_failure_count += 1
@@ -529,6 +541,144 @@ class OptimizedMonitor:
             self.global_failure_count = 0
 
         return self.hosts_status[ip]
+
+    async def _check_performance_alerts(self, result: HostStatus, session_factory):
+        """Verifica alertas de performance (CPU, Memória, Disco, Rede)"""
+        if not result.snmp_data:
+            return
+        
+        session = session_factory()
+        try:
+            alerts = []
+            
+            # CPU Alert
+            cpu_alert, cpu_severity, cpu_msg = should_alert_cpu(result.snmp_data.get('hrProcessorLoad'), session)
+            if cpu_alert:
+                alerts.append(('cpu', cpu_severity, cpu_msg))
+            
+            # Memory Alert
+            mem_alert, mem_severity, mem_msg = should_alert_memory(
+                result.snmp_data.get('memTotalReal'),
+                result.snmp_data.get('memAvailReal'),
+                session
+            )
+            if mem_alert:
+                alerts.append(('memory', mem_severity, mem_msg))
+            
+            # Storage Alert
+            storage_alert, storage_severity, storage_msg = should_alert_storage(
+                result.snmp_data.get('hrStorageSize'),
+                result.snmp_data.get('hrStorageUsed'),
+                session
+            )
+            if storage_alert:
+                alerts.append(('storage', storage_severity, storage_msg))
+            
+            # Network Alert
+            network_alert, network_severity, network_msg = should_alert_network(
+                result.snmp_data.get('ifOperStatus'),
+                result.snmp_data.get('ifInOctets'),
+                result.snmp_data.get('ifOutOctets'),
+                getattr(result, 'previous_snmp_data', None),
+                session
+            )
+            if network_alert:
+                alerts.append(('network', network_severity, network_msg))
+            
+            # Enviar alertas encontrados
+            for alert_type, severity, message in alerts:
+                await self._send_performance_alert(session_factory, result, alert_type, severity, message)
+                
+        except Exception as e:
+            if self.logger:
+                logger.error(f"Error checking performance alerts for {result.ip}: {e}")
+        finally:
+            session.close()
+
+    async def _send_performance_alert(self, session_factory, result, alert_type, severity, message):
+        """Envia alerta de performance específico"""
+        alert_config = {
+            'cpu': {
+                'title': f'🔴 CPU Alta - {result.nickname or result.ip}',
+                'category': 'performance'
+            },
+            'memory': {
+                'title': f'🟠 Memória Alta - {result.nickname or result.ip}',
+                'category': 'performance'
+            },
+            'storage': {
+                'title': f'🟡 Disco Cheio - {result.nickname or result.ip}',
+                'category': 'performance'
+            },
+            'network': {
+                'title': f'🔵 Problema de Rede - {result.nickname or result.ip}',
+                'category': 'network'
+            }
+        }
+        
+        config = alert_config[alert_type]
+        
+        # Verificar se já não enviamos alerta recente do mesmo tipo
+        if not self._should_send_performance_alert(result.ip, alert_type):
+            return
+        
+        try:
+            # Criar alerta no banco de dados
+            session = session_factory()
+            try:
+                create_alert(
+                    title=config['title'],
+                    description=message,
+                    severity=severity,
+                    category=config['category'],
+                    system="monitoring",
+                    impact=f"{alert_type} performance issue",
+                    id_endpoint=result._id,
+                    id_user_created=1,  # Sistema
+                    assignee="admin",
+                    session=session
+                )
+            finally:
+                session.close()
+            
+            # Email
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                self.alert_email.send_alert_email,
+                config['title'],
+                result.nickname or result.ip,
+                result.ip,
+                f"{alert_type.upper()} ALERT",
+                datetime.now(),
+                message
+            )
+            
+            # Webhook
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                self.alert_webhook.send_alert_webhook,
+                result.nickname or result.ip,
+                result.ip,
+                f"{alert_type.upper()} ALERT",
+                datetime.now(),
+                message
+            )
+            
+        except Exception as e:
+            if self.logger:
+                logger.error(f"Error sending {alert_type} alert for {result.ip}: {e}")
+
+    def _should_send_performance_alert(self, ip: str, alert_type: str) -> bool:
+        """Evita spam de alertas - só envia a cada 30 minutos"""
+        key = f"{ip}_{alert_type}"
+        now = datetime.now()
+        
+        last_sent = self._last_performance_alerts.get(key)
+        if last_sent and (now - last_sent).seconds < 1800:  # 30 minutos
+            return False
+        
+        self._last_performance_alerts[key] = now
+        return True
 
     async def monitoring_cycle(self):
         """Ciclo de monitoramento com melhor handling de falhas"""
@@ -681,9 +831,12 @@ class OptimizedMonitor:
             async for result in self.monitoring_cycle():
                 if result:
                     interval = int(result.interval) if result.interval else interval
-                    await asyncio.gather(self.send_alert(session_factory, result),
+                    await asyncio.gather(
+                        self.send_alert(session_factory, result),
+                        self._check_performance_alerts(result, session_factory),
                         self.insert_snmp_data_async(session_factory, result),
-                        return_exceptions=True)
+                        return_exceptions=True
+                    )
 
             elapsed = asyncio.get_event_loop().time() - start_time
             sleep_time = max(0.1, interval - elapsed)

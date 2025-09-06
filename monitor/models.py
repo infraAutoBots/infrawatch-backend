@@ -453,6 +453,36 @@ class FailureThresholdConfig(Base):
         self.active = active
 
 
+class PerformanceThresholds(Base):
+    """
+    Modelo ORM para configuração de limites de performance.
+    Representa os limites para CPU, Memória, Disco e Rede antes de disparar alertas.
+    """
+    __tablename__ = 'performance_thresholds'
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    metric_type = Column("metric_type", String(50), nullable=False)  # cpu, memory, storage, network
+    warning_threshold = Column("warning_threshold", Integer, nullable=False)  # 80
+    critical_threshold = Column("critical_threshold", Integer, nullable=False)  # 90
+    enabled = Column("enabled", Boolean, default=True)
+    created_at = Column("created_at", DateTime, default=func.now())
+    updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __init__(self, metric_type, warning_threshold, critical_threshold, enabled=True):
+        """
+        Inicializa uma nova configuração de limites de performance.
+        Args:
+            metric_type (str): Tipo de métrica (cpu, memory, storage, network).
+            warning_threshold (int): Limite de aviso em porcentagem.
+            critical_threshold (int): Limite crítico em porcentagem.
+            enabled (bool): Se a configuração está ativa.
+        """
+        self.metric_type = metric_type
+        self.warning_threshold = warning_threshold
+        self.critical_threshold = critical_threshold
+        self.enabled = enabled
+
+
 # executar a criacao dos metadados do banco de dados
 # alembic init alembic
 
