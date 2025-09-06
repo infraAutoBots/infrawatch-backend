@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 import re
 
@@ -31,10 +32,6 @@ snmp_pool = SNMPEnginePool()
 
 # Adicionar na classe OptimizedMonitor
 # Constantes de configuração
-NOTIFICATION_CONFIG = {
-    "default_email": ["ndondadaniel2020@gmail.com"],
-    "default_user_id": 0,
-}
 
 
 # Definições para eventos comuns
@@ -392,9 +389,14 @@ class OptimizedMonitor:
                         oid_str = str(var_binds[0][0])
                         value = str(var_binds[0][1])
                         
-                        if not oid_str.startswith(base_oid) or not value:
+                        if not oid_str.startswith(base_oid) or value in ['', 'None', 'noSuchInstance']:
                             break  # Saímos da tabela
-                        values.append({oid_str[len(base_oid):].lstrip('.'): value
+                        
+                        # Extrair o índice do OID (parte após o OID base)
+                        index = oid_str[len(base_oid):].lstrip('.')
+                        values.append({
+                            'index': index,
+                            'value': value
                         })
 
                         # Próximo OID para continuar o walk
@@ -415,7 +417,7 @@ class OptimizedMonitor:
                         logger.debug(f"Erro durante walk da tabela {base_oid}: {e}")
                     break
 
-            return str(values) if values else None
+            return values if values else None
 
         except Exception as e:
             if self.logger:
@@ -437,8 +439,8 @@ class OptimizedMonitor:
                     if self._is_table_oid(oid):
                         # Usar next_cmd para tabelas (SNMP walk)
                         values = await self._get_values_from_snmp_tables(engine, auth_data, ip, port, oid)
-                        result[oids_keys[idx]] = values
-                        if self.logger:
+                        result[oids_keys[idx]] = str(values) if values else None
+                        if self.logger and values:
                             logger.debug(f"OID de tabela {oid} retornou {len(values)} entradas para {ip}")
                     else:
                         # Usar get_cmd para valores únicos
@@ -692,8 +694,6 @@ class OptimizedMonitor:
 
 
 if __name__ == "__main__":
-    import sys
-
     if len(sys.argv) > 1:
         print("⚡ Modo OTIMIZADO ativado!")
         monitor = OptimizedMonitor(logger=True)
