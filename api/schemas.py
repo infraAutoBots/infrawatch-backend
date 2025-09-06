@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator
-from typing import Optional, List
+from typing import Optional, List, Union, Any, Dict
+import json
 from datetime import datetime
 from enum import Enum
 
@@ -48,12 +49,37 @@ class EndPointsDataSchemas(BaseModel):
     sysDescr: Optional[str]
     sysName: Optional[str]
     sysUpTime: Optional[str]
-    hrProcessorLoad: Optional[str]
+    hrProcessorLoad: Optional[List[Dict[str, str]]]
     memTotalReal: Optional[str]
     memAvailReal: Optional[str]
-    hrStorageSize: Optional[str]
-    hrStorageUsed: Optional[str]
+    hrStorageSize: Optional[List[Dict[str, str]]]
+    hrStorageUsed: Optional[List[Dict[str, str]]]
     last_updated: Optional[datetime]
+
+    @field_validator('hrProcessorLoad', 'hrStorageSize', 'hrStorageUsed', mode='before')
+    @classmethod
+    def parse_json_or_list(cls, v):
+        """
+        Converte string JSON para lista de dicts se necessário
+        """
+        if v is None:
+            return None
+        if isinstance(v, str):
+            if v.strip() == "" or v.strip() == "[]":
+                return None
+            try:
+                # Corrigir aspas simples para duplas (JSON válido)
+                json_str = v.replace("'", '"')
+                # Tenta fazer parse do JSON
+                parsed = json.loads(json_str)
+                if isinstance(parsed, list):
+                    return parsed
+                return None
+            except (json.JSONDecodeError, ValueError):
+                return None
+        if isinstance(v, list):
+            return v
+        return None
 
     class Config:
         from_attributes = True
