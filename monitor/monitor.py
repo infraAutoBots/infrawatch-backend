@@ -153,7 +153,7 @@ class OptimizedMonitor:
         self._last_performance_alerts = {}
         
         # Inicializar thresholds padrão
-        # initialize_default_thresholds(session)
+        initialize_default_thresholds(session)
 
         if session:
             data = session.query(EndPoints).all()
@@ -415,10 +415,7 @@ class OptimizedMonitor:
                         
                         # Extrair o índice do OID (parte após o OID base)
                         index = oid_str[len(base_oid):].lstrip('.')
-                        values.append({
-                            'index': index,
-                            'value': value
-                        })
+                        values.append({'index': index, 'value': value})
 
                         # Próximo OID para continuar o walk
                         current_oid = var_binds[0][0]

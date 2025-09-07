@@ -255,136 +255,92 @@ HostStatus(_id=7,
 
 
 
+
+
+
 {
-blic",
-  "port": 161,
-  "user": "",
-  "authKey": "",
-  "privKey": "",
-  'sysDescr': '1.3.6.1.2.1.1.1.0',
-  'sysName': '1.3.6.1.2.1.1.5.0',
-  'sysUpTime': '1.3.6.1.2.1.1.3.0',
-  'hrProcessorLoad': '1.3.6.1.2.1.25.3.3.1.2',
-  'memTotalReal': '1.3.6.1.4.1.2021.4.5.0',
-  'memAvailReal': '1.3.6.1.4.1.2021.4.6.0',
-  'hrStorageSize': '1.3.6.1.2.1.25.2.3.1.5',
-  'hrStorageUsed': '1.3.6.1.2.1.25.2.3.1.6'
+    <!-- CPU -->
+    <Instance oid=".1.3.6.1.2.1.25.3.3.1.2.1" valueType="Integer">
+    <Value><![CDATA[23]]></Value>
+    </Instance>
+    <Instance oid=".1.3.6.1.2.1.25.3.3.1.2.2" valueType="Integer">
+    <Value><![CDATA[31]]></Value>
+    </Instance>
+    <!-- Memória -->
+    <Instance oid=".1.3.6.1.4.1.2021.4.5.0" valueType="Integer">
+    <Value><![CDATA[8192000]]></Value>
+    </Instance>
+    <Instance oid=".1.3.6.1.4.1.2021.4.6.0" valueType="Integer">
+    <Value><![CDATA[3072000]]></Value>
+    </Instance>
+    <!-- Interface de rede (exemplo) -->
+    <Instance oid=".1.3.6.1.2.1.2.2.1.8.1" valueType="Integer">
+    <Value><![CDATA[1]]></Value> <!-- 1 = up -->
+    </Instance>
+    <Instance oid=".1.3.6.1.2.1.2.2.1.10.1" valueType="Counter32">
+    <Value><![CDATA[12345678]]></Value> <!-- Bytes recebidos -->
+    </Instance>
+    <Instance oid=".1.3.6.1.2.1.2.2.1.16.1" valueType="Counter32">
+    <Value><![CDATA[87654321]]></Value> <!-- Bytes enviados -->
+    </Instance>
 }
 
 
 {
-blic",
-  "port": 161,
-  "user": "",
-  "authKey": "",
-  "privKey": "",
-  "sysDescr": "1.3.6.1.2.1.1.1.0",
-  "sysName": "1.3.6.1.2.1.1.5.0",
-  "sysUpTime": "1.3.6.1.2.1.1.3.0",
+    hrProcessorLoad
 
-  "hrProcessorLoad": "1.3.6.1.2.1.25.3.3.1.2", nao tem
-  "memTotalReal": "1.3.6.1.4.1.2021.4.5.0", nao tem 
-  "memAvailReal": "1.3.6.1.4.1.2021.4.6.0", Nao tem
-  "hrStorageSize": "1.3.6.1.2.1.25.2.3.1.5",
-  "hrStorageUsed": "1.3.6.1.2.1.25.2.3.1.6"
+    hrProcessorLoad (1.3.6.1.2.1.25.3.3.1.2) – Carga da CPU por núcleo
+
+    snmpwalk -v2c -c public <IP_DO_SERVIDOR> 1.3.6.1.2.1.25.3.3.1.2
+
+    HOST-RESOURCES-MIB::hrProcessorLoad.1 = INTEGER: 12
+    HOST-RESOURCES-MIB::hrProcessorLoad.2 = INTEGER: 18
+
+    table_patterns = [
+        "1.3.6.1.2.1.25.2.3.1",  # hrStorageTable
+        "1.3.6.1.2.1.25.3.3.1",  # hrProcessorTable
+        "1.3.6.1.2.1.2.2.1",     # ifTable
+        "1.3.6.1.2.1.4.20.1",    # ipAddrTable
+    ]
+
+    {
+    "id_end_point": 1,
+    "status": true,
+    "sysDescr": "Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686",
+    "sysName": "emailserver",
+    "sysUpTime": "8879",
+    "hrProcessorLoad": "", lista de carga por cpu (1.3.6.1.2.1.25.3.3.1.2)
+    "memTotalReal": "8192000", Total de memória física (1.3.6.1.4.1.2021.4.5.0)
+    "memAvailReal": "3072000", Memória física livre (1.3.6.1.4.1.2021.4.6.0)
+    "hrStorageSize": "", lista de Armazenamento total (1.3.6.1.2.1.25.2.3.1.5)
+    "hrStorageUsed": "", lista de armazenamento usado (1.3.6.1.2.1.25.2.3.1.6)
+    "last_updated": "2025-09-04T11:02:47.637753"
+    }
 }
 
-
-<!-- CPU -->
-<Instance oid=".1.3.6.1.2.1.25.3.3.1.2.1" valueType="Integer">
-  <Value><![CDATA[23]]></Value>
-</Instance>
-<Instance oid=".1.3.6.1.2.1.25.3.3.1.2.2" valueType="Integer">
-  <Value><![CDATA[31]]></Value>
-</Instance>
-<!-- Memória -->
-<Instance oid=".1.3.6.1.4.1.2021.4.5.0" valueType="Integer">
-  <Value><![CDATA[8192000]]></Value>
-</Instance>
-<Instance oid=".1.3.6.1.4.1.2021.4.6.0" valueType="Integer">
-  <Value><![CDATA[3072000]]></Value>
-</Instance>
-<!-- Interface de rede (exemplo) -->
-<Instance oid=".1.3.6.1.2.1.2.2.1.8.1" valueType="Integer">
-  <Value><![CDATA[1]]></Value> <!-- 1 = up -->
-</Instance>
-<Instance oid=".1.3.6.1.2.1.2.2.1.10.1" valueType="Counter32">
-  <Value><![CDATA[12345678]]></Value> <!-- Bytes recebidos -->
-</Instance>
-<Instance oid=".1.3.6.1.2.1.2.2.1.16.1" valueType="Counter32">
-  <Value><![CDATA[87654321]]></Value> <!-- Bytes enviados -->
-</Instance>
-
-
-
-
-
-
-
-hrProcessorLoad
-
-hrProcessorLoad (1.3.6.1.2.1.25.3.3.1.2) – Carga da CPU por núcleo
-
-snmpwalk -v2c -c public <IP_DO_SERVIDOR> 1.3.6.1.2.1.25.3.3.1.2
-
-HOST-RESOURCES-MIB::hrProcessorLoad.1 = INTEGER: 12
-HOST-RESOURCES-MIB::hrProcessorLoad.2 = INTEGER: 18
-
-table_patterns = [
-    "1.3.6.1.2.1.25.2.3.1",  # hrStorageTable
-    "1.3.6.1.2.1.25.3.3.1",  # hrProcessorTable
-    "1.3.6.1.2.1.2.2.1",     # ifTable
-    "1.3.6.1.2.1.4.20.1",    # ipAddrTable
-]
 
 {
-  "id_end_point": 1,
-  "status": true,
-  "sysDescr": "Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686",
-  "sysName": "emailserver",
-  "sysUpTime": "8879",
-  "hrProcessorLoad": "", lista de carga por cpu (1.3.6.1.2.1.25.3.3.1.2)
-  "memTotalReal": "8192000", Total de memória física (1.3.6.1.4.1.2021.4.5.0)
-  "memAvailReal": "3072000", Memória física livre (1.3.6.1.4.1.2021.4.6.0)
-  "hrStorageSize": "", lista de Armazenamento total (1.3.6.1.2.1.25.2.3.1.5)
-  "hrStorageUsed": "", lista de armazenamento usado (1.3.6.1.2.1.25.2.3.1.6)
-  "last_updated": "2025-09-04T11:02:47.637753"
+    ubuntu~/Transferências/ireasoning/simulator/bin
+    $ snmpget -v2c -c public 127.0.0.1 1.3.6.1.2.1.25.3.3.1.2.1 1.3.6.1.2.1.25.3.3.1.2.2 1.3.6.1.4.1.2021.4.5.0 1.3.6.1.4.1.2021.4.6.0 1.3.6.1.2.1.25.2.3.1.5.1 1.3.6.1.2.1.25.2.3.1.6.1 1.3.6.1.2.1.2.2.1.8.1 1.3.6.1.2.1.2.2.1.10.1 1.3.6.1.2.1.2.2.1.16.1
+    iso.3.6.1.2.1.25.3.3.1.2.1 = INTEGER: 23
+    iso.3.6.1.2.1.25.3.3.1.2.2 = INTEGER: 31
+    iso.3.6.1.4.1.2021.4.5.0 = INTEGER: 8192000
+    iso.3.6.1.4.1.2021.4.6.0 = INTEGER: 3072000
+    iso.3.6.1.2.1.25.2.3.1.5.1 = INTEGER: 483244
+    iso.3.6.1.2.1.25.2.3.1.6.1 = INTEGER: 467084
+    iso.3.6.1.2.1.2.2.1.8.1 = INTEGER: 1
+    iso.3.6.1.2.1.2.2.1.10.1 = Counter32: 2713706375
+    iso.3.6.1.2.1.2.2.1.16.1 = Counter32: 2713706375
+
+    ubuntu~/Transferências/ireasoning/simulator/bin
+    $ snmpwalk -v2c -c public 127.0.0.1 1.3.6.1.4.1.2021.4.6.0
+    iso.3.6.1.4.1.2021.4.6.0 = No more variables left in this MIB View (It is past the end of the MIB tree)
+
+    ubuntu~/Transferências/ireasoning/simulator/bin
+    $ snmpwalk -v2c -c public 127.0.0.1       1.3.6.1.4.1.2021.4.6.0
 }
 
-
-
-
-
-
-
-
-ubuntu~/Transferências/ireasoning/simulator/bin
-$ snmpget -v2c -c public 127.0.0.1 1.3.6.1.2.1.25.3.3.1.2.1 1.3.6.1.2.1.25.3.3.1.2.2 1.3.6.1.4.1.2021.4.5.0 1.3.6.1.4.1.2021.4.6.0 1.3.6.1.2.1.25.2.3.1.5.1 1.3.6.1.2.1.25.2.3.1.6.1 1.3.6.1.2.1.2.2.1.8.1 1.3.6.1.2.1.2.2.1.10.1 1.3.6.1.2.1.2.2.1.16.1
-iso.3.6.1.2.1.25.3.3.1.2.1 = INTEGER: 23
-iso.3.6.1.2.1.25.3.3.1.2.2 = INTEGER: 31
-iso.3.6.1.4.1.2021.4.5.0 = INTEGER: 8192000
-iso.3.6.1.4.1.2021.4.6.0 = INTEGER: 3072000
-iso.3.6.1.2.1.25.2.3.1.5.1 = INTEGER: 483244
-iso.3.6.1.2.1.25.2.3.1.6.1 = INTEGER: 467084
-iso.3.6.1.2.1.2.2.1.8.1 = INTEGER: 1
-iso.3.6.1.2.1.2.2.1.10.1 = Counter32: 2713706375
-iso.3.6.1.2.1.2.2.1.16.1 = Counter32: 2713706375
-
-ubuntu~/Transferências/ireasoning/simulator/bin
-$ snmpwalk -v2c -c public 127.0.0.1 1.3.6.1.4.1.2021.4.6.0
-iso.3.6.1.4.1.2021.4.6.0 = No more variables left in this MIB View (It is past the end of the MIB tree)
-
-ubuntu~/Transferências/ireasoning/simulator/bin
-$ snmpwalk -v2c -c public 127.0.0.1       1.3.6.1.4.1.2021.4.6.0
-
-
-
-
-
-
-
-
-
+{
     async def _get_values_from_snmp_tables(self, engine, auth_data, ip: str, port: int, base_oid: str):
         """Obtém todos os valores de uma tabela SNMP usando next_cmd (SNMP walk)"""
         
@@ -441,3 +397,69 @@ $ snmpwalk -v2c -c public 127.0.0.1       1.3.6.1.4.1.2021.4.6.0
                     break
             print(values)
             return str(values) if values else None
+}
+
+{
+blic",
+  "port": 161,
+  "user": "",
+  "authKey": "",
+  "privKey": "",
+  "sysDescr": "1.3.6.1.2.1.1.1.0",
+  "sysName": "1.3.6.1.2.1.1.5.0",
+  "sysUpTime": "1.3.6.1.2.1.1.3.0",
+  "hrProcessorLoad": "1.3.6.1.2.1.25.3.3.1.2", nao tem
+  "memTotalReal": "1.3.6.1.4.1.2021.4.5.0", nao tem 
+  "memAvailReal": "1.3.6.1.4.1.2021.4.6.0", Nao tem
+  "hrStorageSize": "1.3.6.1.2.1.25.2.3.1.5",
+  "hrStorageUsed": "1.3.6.1.2.1.25.2.3.1.6",
+  "ifOperStatus": "1.3.6.1.2.1.2.2.1.8.1",
+  "ifInOctets": "1.3.6.1.2.1.2.2.1.10.1",
+  "ifOutOctets": "1.3.6.1.2.1.2.2.1.16.1",
+}
+
+
+2025-09-07 16:16:28,144 [INFO] 🚀 Iniciando monitoramento otimizado com auto-reconexão...
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.2 Value: 31
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.2 Value: 31
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.4.1.2021.4.5.0 Value: 8192000
+Walk OID: 1.3.6.1.4.1.2021.4.5.0 Value: 8192000
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.2 Value: 31
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.2 Value: 31
+Walk OID: 1.3.6.1.2.1.25.3.4.1.1.1025 Value: 1
+Walk OID: 1.3.6.1.4.1.2021.4.5.0 Value: 8192000
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.2.3.1.5.1 Value: 483244
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.2.3.1.5.3 Value: 1466276
+Walk OID: 1.3.6.1.2.1.25.3.3.1.2.1 Value: 23
+Walk OID: 1.3.6.1.2.1.25.2.3.1.5.6 Value: 483244
+Walk OID: 1.3.6.1.2.1.25.2.3.1.5.7 Value: 114584
+Walk OID: 1.3.6.1.2.1.25.2.3.1.5.10 Value: 983032
+Walk OID: 1.3.6.1.2.1.25.2.3.1.5.31 Value: 9329326
+Walk OID: 1.3.6.1.2.1.25.2.3.1.5.32 Value: 101086
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.1 Value: 467084
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.1 Value: 467084
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.3 Value: 473964
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.6 Value: 11440
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.7 Value: 114584
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.10 Value: 6880
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.31 Value: 1828816
+Walk OID: 1.3.6.1.2.1.25.2.3.1.6.32 Value: 9270
+Walk OID: 1.3.6.1.2.1.25.3.2.1.1.768 Value: 768
+
+
+
+
+
+
+
+
+
