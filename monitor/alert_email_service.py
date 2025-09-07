@@ -109,7 +109,8 @@ class EmailService:
                 server.starttls()
                 server.login(self.smtp_username, self.smtp_password)
                 result = server.send_message(msg)
-
+                logger.info(f"Alert email sent successfully")
+            
             return True
             
         except smtplib.SMTPAuthenticationError as e:
