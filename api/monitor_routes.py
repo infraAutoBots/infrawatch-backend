@@ -56,8 +56,8 @@ async def add_ip(
 
     if (not end_point.sysDescr and not end_point.sysName and not end_point.sysUpTime and
         not end_point.hrProcessorLoad and not end_point.memTotalReal and not end_point.memAvailReal and
-        not end_point.hrStorageSize and not end_point.hrStorageUsed and not end_point.ifOperStatus and
-        not end_point.ifInOctets and not end_point.ifOutOctets):
+        not end_point.hrStorageSize and not end_point.hrStorageUsed and not end_point.hrStorageDescr and 
+        not end_point.ifOperStatus and not end_point.ifInOctets and not end_point.ifOutOctets):
         new_endpoint_oids = EndPointOIDs(
             new_endpoint.id,
             end_point.sysDescr or "1.3.6.1.2.1.1.1.0",
@@ -68,6 +68,7 @@ async def add_ip(
             end_point.memAvailReal or "1.3.6.1.4.1.2021.4.6.0",
             end_point.hrStorageSize or "1.3.6.1.2.1.25.2.3.1.5",
             end_point.hrStorageUsed or "1.3.6.1.2.1.25.2.3.1.6",
+            end_point.hrStorageDescr or "1.3.6.1.2.1.25.2.3.1.3",
             end_point.ifOperStatus or "1.3.6.1.2.1.2.2.1.8",
             end_point.ifInOctets or "1.3.6.1.2.1.2.2.1.10",
             end_point.ifOutOctets or "1.3.6.1.2.1.2.2.1.16"
@@ -197,6 +198,7 @@ async def update_ip_info(
     oids.memAvailReal = end_point.memAvailReal
     oids.hrStorageSize = end_point.hrStorageSize
     oids.hrStorageUsed = end_point.hrStorageUsed
+    oids.hrStorageDescr = end_point.hrStorageDescr
 
     session.commit()
     return {"success": True, "message": f"Endereço IP {endpoint.ip} atualizado na lista de monitoramento."}

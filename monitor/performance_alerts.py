@@ -170,7 +170,7 @@ def should_alert_network(if_status, if_in_octets, if_out_octets, previous_data, 
         if interface.get('value') != '1':  # 1 = up, 2 = down
             alerts.append(f"Interface {interface['index']} está DOWN")
             max_severity = "critical"
-    
+
     # Verificar utilização alta de rede (se temos dados anteriores)
     if previous_data and if_in_octets and if_out_octets:
         warning_threshold, critical_threshold = get_thresholds(session, 'network')
@@ -181,7 +181,7 @@ def should_alert_network(if_status, if_in_octets, if_out_octets, previous_data, 
         
         if in_octets_list and out_octets_list and prev_in_list and prev_out_list:
             time_diff = 30  # Intervalo de monitoramento em segundos
-            
+
             for i, in_octets in enumerate(in_octets_list):
                 if i < len(out_octets_list) and i < len(prev_in_list) and i < len(prev_out_list):
                     try:
@@ -245,3 +245,4 @@ def initialize_default_thresholds(session: Session):
             session.add(threshold)
     
     session.commit()
+

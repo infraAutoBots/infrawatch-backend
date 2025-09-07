@@ -463,3 +463,142 @@ Walk OID: 1.3.6.1.2.1.25.3.2.1.1.768 Value: 768
 
 
 
+
+{
+  "monitors": [
+    {
+      "endpoint": "127.0.0.1",
+      "snmp": true,
+      "data": {
+        "id_end_point": 1,
+        "status": true,
+        "sysDescr": "Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686",
+        "sysName": "emailserver",
+        "sysUpTime": "87983",
+        "hrProcessorLoad": [
+          {
+            "index": "1",
+            "value": "23"
+          },
+          {
+            "index": "2",
+            "value": "31"
+          }
+        ],
+        "memTotalReal": "8192000",
+        "memAvailReal": "3072000",
+        "hrStorageSize": [
+          {
+            "index": "1",
+            "value": "483244"
+          },
+          {
+            "index": "3",
+            "value": "1466276"
+          },
+          {
+            "index": "6",
+            "value": "483244"
+          },
+          {
+            "index": "7",
+            "value": "114584"
+          },
+          {
+            "index": "10",
+            "value": "983032"
+          },
+          {
+            "index": "31",
+            "value": "9329326"
+          },
+          {
+            "index": "32",
+            "value": "101086"
+          }
+        ],
+        "hrStorageUsed": [
+          {
+            "index": "1",
+            "value": "467084"
+          },
+          {
+            "index": "3",
+            "value": "473964"
+          },
+          {
+            "index": "6",
+            "value": "11440"
+          },
+          {
+            "index": "7",
+            "value": "114584"
+          },
+          {
+            "index": "10",
+            "value": "6880"
+          },
+          {
+            "index": "31",
+            "value": "1828816"
+          },
+          {
+            "index": "32",
+            "value": "9270"
+          }
+        ],
+        "ifOperStatus": [
+          {
+            "index": "1",
+            "value": "1"
+          },
+          {
+            "index": "2",
+            "value": "1"
+          },
+          {
+            "index": "3",
+            "value": "2"
+          }
+        ],
+        "ifInOctets": [
+          {
+            "index": "1",
+            "value": "2713706375"
+          },
+          {
+            "index": "2",
+            "value": "10803936"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          }
+        ],
+        "ifOutOctets": [
+          {
+            "index": "1",
+            "value": "2713706375"
+          },
+          {
+            "index": "2",
+            "value": "4189015"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          }
+        ],
+        "last_updated": "2025-09-07T17:28:00.711474"
+      }
+    },
+
+
+
+
+
+guardar tempo de resposta
+melhorar as msg de error relacionados ao armazenamento, rede, cpu
+"hrStorageDescr" : "1.3.6.1.2.1.25.2.3.1.3"
+
+

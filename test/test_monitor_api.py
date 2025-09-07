@@ -52,7 +52,8 @@ class MonitorTester:
             "memTotalReal": "1",
             "memAvailReal": "1",
             "hrStorageSize": "1",
-            "hrStorageUsed": "1"
+            "hrStorageUsed": "1",
+            "hrStorageDescr": "1"
         }
         response = self.session.post(MONITOR_ENDPOINT + "/", json=payload)
         print(f"Status: {response.status_code}")

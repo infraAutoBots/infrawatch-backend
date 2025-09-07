@@ -18,11 +18,13 @@ from utils import (HostStatus, print_logs, get_HostStatus,
 from alert_email_service import EmailService
 from alert_webhook_service import WebhookService
 from dependencies import init_session
-from models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig
 from snmp_engine_pool import SNMPEnginePool, logger
 from performance_alerts import (should_alert_cpu, should_alert_memory, 
                                should_alert_storage, should_alert_network,
                                initialize_default_thresholds)
+
+from models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig
+
 from pprint import pprint
 
 
@@ -176,6 +178,7 @@ class OptimizedMonitor:
                 memAvailReal = hosts.snmp_data.get("memAvailReal") if hosts.snmp_data else None
                 hrStorageSize = hosts.snmp_data.get("hrStorageSize") if hosts.snmp_data else None
                 hrStorageUsed = hosts.snmp_data.get("hrStorageUsed") if hosts.snmp_data else None
+                hrStorageDescr = hosts.snmp_data.get("hrStorageDescr") if hosts.snmp_data else None
                 ifOperStatus = hosts.snmp_data.get("ifOperStatus") if hosts.snmp_data else None
                 ifInOctets = hosts.snmp_data.get("ifInOctets") if hosts.snmp_data else None
                 ifOutOctets = hosts.snmp_data.get("ifOutOctets") if hosts.snmp_data else None
@@ -203,6 +206,7 @@ class OptimizedMonitor:
                         record.memAvailReal == new_data["memAvailReal"] and
                         record.hrStorageSize == new_data["hrStorageSize"] and
                         record.hrStorageUsed == new_data["hrStorageUsed"] and
+                        record.hrStorageDescr == new_data["hrStorageDescr"] and
                         record.ifOperStatus == new_data["ifOperStatus"] and
                         record.ifInOctets == new_data["ifInOctets"] and
                         record.ifOutOctets == new_data["ifOutOctets"]
@@ -219,6 +223,7 @@ class OptimizedMonitor:
                     "memAvailReal": memAvailReal,
                     "hrStorageSize": hrStorageSize,
                     "hrStorageUsed": hrStorageUsed,
+                    "hrStorageDescr": hrStorageDescr,
                     "ifOperStatus": ifOperStatus,
                     "ifInOctets": ifInOctets,
                     "ifOutOctets": ifOutOctets
@@ -257,6 +262,7 @@ class OptimizedMonitor:
                     memAvailReal=memAvailReal,
                     hrStorageSize=hrStorageSize,
                     hrStorageUsed=hrStorageUsed,
+                    hrStorageDescr=hrStorageDescr,
                     ifOperStatus=ifOperStatus,
                     ifInOctets=ifInOctets,
                     ifOutOctets=ifOutOctets,
@@ -662,7 +668,7 @@ class OptimizedMonitor:
                 )
             finally:
                 session.close()
-            
+
             # Email
             await asyncio.get_event_loop().run_in_executor(
                 None,
@@ -674,7 +680,7 @@ class OptimizedMonitor:
                 datetime.now(),
                 message
             )
-            
+
             # Webhook
             await asyncio.get_event_loop().run_in_executor(
                 None,

@@ -64,6 +64,7 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
             "memAvailReal": oids_data.memAvailReal,
             "hrStorageSize": oids_data.hrStorageSize,
             "hrStorageUsed": oids_data.hrStorageUsed,
+            "hrStorageDescr": oids_data.hrStorageDescr,
             "ifOperStatus": oids_data.ifOperStatus,
             "ifInOctets": oids_data.ifInOctets,
             "ifOutOctets": oids_data.ifOutOctets

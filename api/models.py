@@ -131,13 +131,14 @@ class EndPointsData(Base):
     memAvailReal = Column("memAvailReal", String)
     hrStorageSize = Column("hrStorageSize", String)
     hrStorageUsed = Column("hrStorageUsed", String)
+    hrStorageDescr = Column("hrStorageDescr", String)
     ifOperStatus = Column("ifOperStatus", String)
     ifInOctets = Column("ifInOctets", String)
     ifOutOctets = Column("ifOutOctets", String)
     last_updated = Column("last_updated", DateTime)
     # resposta
 
-    def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, ifOperStatus, ifInOctets, ifOutOctets, last_updated):
+    def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, hrStorageDescr, ifOperStatus, ifInOctets, ifOutOctets, last_updated):
         """
         Inicializa um novo registro de dados coletados de endpoint.
         Args:
@@ -151,6 +152,7 @@ class EndPointsData(Base):
             memAvailReal (str): Memória disponível.
             hrStorageSize (str): Tamanho do armazenamento.
             hrStorageUsed (str): Armazenamento usado.
+            hrStorageDescr (str): Descrição do armazenamento.
             ifOperStatus (str): Status operacional das interfaces.
             ifInOctets (str): Tráfego recebido das interfaces.
             ifOutOctets (str): Tráfego transmitido das interfaces.
@@ -166,6 +168,7 @@ class EndPointsData(Base):
         self.memAvailReal = memAvailReal
         self.hrStorageSize = hrStorageSize
         self.hrStorageUsed = hrStorageUsed
+        self.hrStorageDescr = hrStorageDescr
         self.ifOperStatus = ifOperStatus
         self.ifInOctets = ifInOctets
         self.ifOutOctets = ifOutOctets
@@ -189,11 +192,12 @@ class EndPointOIDs(Base):
     memAvailReal = Column("memAvailReal", String)
     hrStorageSize = Column("hrStorageSize", String)
     hrStorageUsed = Column("hrStorageUsed", String)
+    hrStorageDescr = Column("hrStorageDescr", String)
     ifOperStatus = Column("ifOperStatus", String)
     ifInOctets = Column("ifInOctets", String)
     ifOutOctets = Column("ifOutOctets", String)
 
-    def __init__(self, id_end_point, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, ifOperStatus, ifInOctets, ifOutOctets):
+    def __init__(self, id_end_point, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, hrStorageDescr, ifOperStatus, ifInOctets, ifOutOctets):
         """
         Inicializa um novo conjunto de OIDs para um endpoint.
         Args:
@@ -206,6 +210,7 @@ class EndPointOIDs(Base):
             memAvailReal (str): Memória disponível.
             hrStorageSize (str): Tamanho do armazenamento.
             hrStorageUsed (str): Armazenamento usado.
+            hrStorageDescr (str): Descrição do armazenamento.
             ifOperStatus (str): Status operacional das interfaces.
             ifInOctets (str): Tráfego recebido das interfaces.
             ifOutOctets (str): Tráfego transmitido das interfaces.
@@ -219,6 +224,7 @@ class EndPointOIDs(Base):
         self.memAvailReal = memAvailReal
         self.hrStorageSize = hrStorageSize
         self.hrStorageUsed = hrStorageUsed
+        self.hrStorageDescr = hrStorageDescr
         self.ifOperStatus = ifOperStatus
         self.ifInOctets = ifInOctets
         self.ifOutOctets = ifOutOctets
