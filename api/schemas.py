@@ -58,6 +58,8 @@ class EndPointsDataSchemas(BaseModel):
     ifOperStatus: Optional[List[Dict[str, str]]]
     ifInOctets: Optional[List[Dict[str, str]]]
     ifOutOctets: Optional[List[Dict[str, str]]]
+    ping_rtt: Optional[str]
+    snmp_rtt: Optional[str]
     last_updated: Optional[datetime]
 
     @field_validator('hrProcessorLoad', 'hrStorageSize', 'hrStorageUsed', 'hrStorageDescr', 'ifOperStatus', 'ifInOctets', 'ifOutOctets', mode='before')
