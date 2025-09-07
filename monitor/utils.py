@@ -27,6 +27,7 @@ class HostStatus:
     oids: List[str] = None
     last_updated: Optional[datetime] = None
     ping_rtt: float = 0.0
+    snmp_rtt: float = 0.0  # Tempo de resposta SNMP em ms
     # NOVO: Contador de falhas consecutivas
     informed: bool = False
     snmp_informed: bool = False
@@ -45,8 +46,10 @@ def print_logs(result):
 
     snmp_icon = ""
     if check_ip_for_snmp(result):
-        snmp_icon = (f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]}"
-                     if result.snmp_data and result.snmp_data.get('sysDescr') else "❌")
+        if result.snmp_data and result.snmp_data.get('sysDescr'):
+            snmp_icon = f"📊 : {result.snmp_data['sysDescr'].split(' ')[0]} (SNMP: {result.snmp_rtt:.1f}ms)"
+        else:
+            snmp_icon = f"❌ (SNMP: {result.snmp_rtt:.1f}ms)" if result.snmp_rtt > 0 else "❌"
 
     print(f"{status_icon} {result.ip} | RTT: {result.ping_rtt:.1f}ms | {snmp_icon} {failure_info}{failure_ping}")
 

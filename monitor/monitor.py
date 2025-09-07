@@ -266,6 +266,8 @@ class OptimizedMonitor:
                     ifOperStatus=ifOperStatus,
                     ifInOctets=ifInOctets,
                     ifOutOctets=ifOutOctets,
+                    ping_rtt=str(hosts.ping_rtt),
+                    snmp_rtt=str(hosts.snmp_rtt),
                     last_updated=hosts.last_updated
                 )
                 
@@ -449,13 +451,18 @@ class OptimizedMonitor:
             return None
 
     async def _perform_snmp_check(self, ip: str, force_new: bool = False):
-        """Executa uma verificação SNMP"""
+        """Executa uma verificação SNMP e mede o tempo de resposta"""
+        import time
+        
         async with get_snmp_engine(force_new) as engine:
             auth_data = select_snmp_authentication(self.hosts_status[ip])
             oids_values = self.hosts_status[ip].oids.values() or []
             oids_keys = list(self.hosts_status[ip].oids.keys())
             port = self.hosts_status[ip].port or 161
             result = {}
+            
+            # Iniciar medição do tempo total
+            snmp_start_time = time.perf_counter()
 
             if self.logger:
                 logger.debug(f"SNMP {ip}: Iniciando verificação de {len(oids_values)} OIDs (timeout=3.0s, retries=2)")
@@ -493,11 +500,18 @@ class OptimizedMonitor:
                     result[oids_keys[idx]] = None
                     # Não fazer raise aqui para permitir tentar outros OIDs
             
+            # Calcular tempo total de resposta SNMP
+            snmp_end_time = time.perf_counter()
+            snmp_rtt = (snmp_end_time - snmp_start_time) * 1000  # Converter para milissegundos
+            
+            # Atualizar o tempo de resposta no host_status
+            self.hosts_status[ip].snmp_rtt = snmp_rtt
+            
             # Log final do resultado
             if self.logger:
                 successful_oids = sum(1 for v in result.values() if v is not None)
                 total_oids = len(result)
-                logger.debug(f"SNMP check {ip}: {successful_oids}/{total_oids} OIDs responderam")
+                logger.debug(f"SNMP check {ip}: {successful_oids}/{total_oids} OIDs responderam em {snmp_rtt:.1f}ms")
             
             return result
 
