@@ -135,10 +135,12 @@ class EndPointsData(Base):
     ifOperStatus = Column("ifOperStatus", String)
     ifInOctets = Column("ifInOctets", String)
     ifOutOctets = Column("ifOutOctets", String)
+    ping_rtt = Column("ping_rtt", String)  # Tempo de resposta PING em ms
+    snmp_rtt = Column("snmp_rtt", String)  # Tempo de resposta SNMP em ms
     last_updated = Column("last_updated", DateTime)
     # resposta
 
-    def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, hrStorageDescr, ifOperStatus, ifInOctets, ifOutOctets, last_updated):
+    def __init__(self, id_end_point, status, sysDescr, sysName, sysUpTime, hrProcessorLoad, memTotalReal, memAvailReal, hrStorageSize, hrStorageUsed, hrStorageDescr, ifOperStatus, ifInOctets, ifOutOctets, ping_rtt, snmp_rtt, last_updated):
         """
         Inicializa um novo registro de dados coletados de endpoint.
         Args:
@@ -172,6 +174,8 @@ class EndPointsData(Base):
         self.ifOperStatus = ifOperStatus
         self.ifInOctets = ifInOctets
         self.ifOutOctets = ifOutOctets
+        self.ping_rtt = ping_rtt
+        self.snmp_rtt = snmp_rtt
         self.last_updated = last_updated
 
 
