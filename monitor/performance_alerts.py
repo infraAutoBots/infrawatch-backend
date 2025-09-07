@@ -113,7 +113,7 @@ def should_alert_memory(mem_total, mem_avail, session: Session) -> Tuple[bool, O
     return False, None, None
 
 
-def should_alert_storage(storage_size, storage_used, session: Session) -> Tuple[bool, Optional[str], Optional[str]]:
+def should_alert_storage(storage_size, storage_used, storage_descr, session: Session) -> Tuple[bool, Optional[str], Optional[str]]:
     """
     Verifica se deve alertar sobre Disco
     Returns: (should_alert, severity, message)
@@ -124,27 +124,29 @@ def should_alert_storage(storage_size, storage_used, session: Session) -> Tuple[
     warning_threshold, critical_threshold = get_thresholds(session, 'storage')
     size_list = parse_snmp_list_data(storage_size)
     used_list = parse_snmp_list_data(storage_used)
-    
-    if not size_list or not used_list:
+    descr_list = parse_snmp_list_data(storage_descr)
+
+    if not size_list or not used_list or not descr_list:
         return False, None, None
     
     alerts = []
     max_severity = None
     
     for i, size_entry in enumerate(size_list):
-        if i < len(used_list):
+        if i < len(used_list) and i < len(descr_list):
             try:
                 size = int(size_entry['value'])
                 used = int(used_list[i]['value'])
-                
+                descr = descr_list[i]['value']
+
                 if size > 0:  # Evitar divisão por zero
                     used_percent = (used / size) * 100
                     
                     if used_percent >= critical_threshold:
-                        alerts.append(f"Disco {size_entry['index']}: {used_percent:.1f}% CRÍTICO")
+                        alerts.append(f"Disco {size_entry['index']} {descr}: {used_percent:.1f}% CRÍTICO")
                         max_severity = "critical"
                     elif used_percent >= warning_threshold:
-                        alerts.append(f"Disco {size_entry['index']}: {used_percent:.1f}% ALTO")
+                        alerts.append(f"Disco {size_entry['index']} {descr}: {used_percent:.1f}% ALTO")
                         if max_severity != "critical":
                             max_severity = "medium"
             except (ValueError, TypeError):

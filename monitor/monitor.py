@@ -597,6 +597,7 @@ class OptimizedMonitor:
             storage_alert, storage_severity, storage_msg = should_alert_storage(
                 result.snmp_data.get('hrStorageSize'),
                 result.snmp_data.get('hrStorageUsed'),
+                result.snmp_data.get('hrStorageDescr'),
                 session
             )
             if storage_alert:
