@@ -39,20 +39,20 @@ class EmailService:
             
             # Buscar configuração ativa
             session = self.session()
-            email_config = session.query(EmailConfig).first()
-
-            list_active_emails = []
-            active_users = session.query(Users).filter(Users.alert == True).all()
-            for user in active_users:
-                list_active_emails.append(user.email)
+            email_config = session.query(EmailConfig).filter(EmailConfig.active == True).first()
 
             if email_config:
-                self.smtp_server = email_config.server
-                self.smtp_port = email_config.port
-                self.smtp_username = email_config.email
-                self.from_email = email_config.email
-                self.smtp_password = email_config.password
-                self.to_emails = ",".join(list_active_emails) if list_active_emails else None
+                    list_active_emails = []
+                    active_users = session.query(Users).filter(Users.alert == True).all()
+                    for user in active_users:
+                        list_active_emails.append(user.email)
+
+                    self.smtp_server = email_config.server
+                    self.smtp_port = email_config.port
+                    self.smtp_username = email_config.email
+                    self.from_email = email_config.email
+                    self.smtp_password = email_config.password
+                    self.to_emails = ",".join(list_active_emails) if list_active_emails else None
             else:
                 logger.error("No active email configuration found in database")
                 return

@@ -407,10 +407,11 @@ class EmailConfig(Base):
     password = Column("password", String, nullable=False)
     port = Column("port", Integer, nullable=False)
     server = Column("server", String, nullable=False)
+    active = Column("active", Boolean, default=True)
     created_at = Column("created_at", DateTime, default=func.now())
     updated_at = Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now())
 
-    def __init__(self, email, password, port, server):
+    def __init__(self, email, password, port, server, active=True):
         """
         Inicializa uma nova configuração de email.
         Args:
@@ -424,6 +425,7 @@ class EmailConfig(Base):
         self.password = password
         self.port = port
         self.server = server
+        self.active = active
 
 
 class FailureThresholdConfig(Base):
