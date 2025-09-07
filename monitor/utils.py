@@ -82,12 +82,59 @@ def get_HostStatus(row: EndPoints, session: Session) -> Optional[HostStatus]:
 
 
 def check_ip_for_snmp(host: HostStatus):
-    if (host and host.ip and host.interval and not host.port 
-        and not host.version and not host.community
-        and not host.user and not host.authKey 
-        and not host.privKey):
+    """Verifica se o host tem configuração SNMP válida"""
+    if not host or not host.ip:
         return False
-    return True 
+    
+    # Verifica se tem configuração SNMP v1/v2c válida
+    has_v1_v2c = (host.version in ["1", "2c"] and 
+                  host.community and 
+                  host.community.strip() != "")
+    
+    # Verifica se tem configuração SNMP v3 válida
+    has_v3 = (host.version == "3" and 
+              host.user and 
+              host.user.strip() != "")
+    
+    return bool(has_v1_v2c or has_v3)
+
+
+def is_snmp_data_valid(snmp_data: dict) -> bool:
+    """Valida se os dados SNMP retornados são úteis"""
+    if not snmp_data:
+        return False
+    
+    # OIDs críticos que são mais importantes para validação
+    critical_oids = ['sysDescr', 'sysUpTime', 'sysName']
+    
+    # Conta valores não-None, não-vazios e não-inválidos
+    valid_values = []
+    critical_working = 0
+    
+    for key, value in snmp_data.items():
+        if value is not None:
+            str_value = str(value).strip()
+            # Considera válido se não for vazio e não for um valor de erro comum
+            if str_value and str_value not in ['', 'None', 'noSuchInstance', 'noSuchObject', 'endOfMibView']:
+                valid_values.append(value)
+                
+                # Conta se é um OID crítico
+                if key in critical_oids:
+                    critical_working += 1
+    
+    # Validação mais inteligente:
+    # 1. Se pelo menos 1 OID crítico funciona, considerar válido
+    # 2. Ou se pelo menos 30% dos OIDs retornaram dados válidos
+    # 3. Ou se pelo menos 1 OID funciona (para casos com poucos OIDs)
+    
+    total_oids = len(snmp_data)
+    min_required = max(1, int(total_oids * 0.3))
+    
+    has_critical = critical_working > 0
+    has_minimum_percentage = len(valid_values) >= min_required
+    has_at_least_one = len(valid_values) >= 1
+    
+    return has_critical or has_minimum_percentage or (total_oids <= 3 and has_at_least_one) 
 
 
 def select_snmp_authentication(host: HostStatus):

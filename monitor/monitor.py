@@ -14,7 +14,7 @@ from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget, next_cmd,
                                          ContextData, ObjectType, ObjectIdentity)
 
 from utils import (HostStatus, print_logs, get_HostStatus,
-                   check_ip_for_snmp, select_snmp_authentication)
+                   check_ip_for_snmp, select_snmp_authentication, is_snmp_data_valid)
 from alert_email_service import EmailService
 from alert_webhook_service import WebhookService
 from dependencies import init_session
@@ -153,7 +153,7 @@ class OptimizedMonitor:
         self._last_performance_alerts = {}
         
         # Inicializar thresholds padrão
-        initialize_default_thresholds(session)
+        # initialize_default_thresholds(session)
 
         if session:
             data = session.query(EndPoints).all()
@@ -386,7 +386,7 @@ class OptimizedMonitor:
         values = []
         try:
             # Criar o transport target primeiro
-            transport_target = await UdpTransportTarget.create((ip, port), timeout=2.0, retries=1)
+            transport_target = await UdpTransportTarget.create((ip, port), timeout=3.0, retries=2)
             # Começar do OID base
             current_oid = ObjectIdentity(base_oid)
             while True:
@@ -394,7 +394,7 @@ class OptimizedMonitor:
                     error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
                         next_cmd(engine, auth_data, transport_target, ContextData(),
                         ObjectType(current_oid), lexicographicMode=False),
-                        timeout=3.0
+                        timeout=5.0  # Timeout geral maior
                     )
                     
                     if error_indication:
@@ -454,6 +454,9 @@ class OptimizedMonitor:
             port = self.hosts_status[ip].port or 161
             result = {}
 
+            if self.logger:
+                logger.debug(f"SNMP {ip}: Iniciando verificação de {len(oids_values)} OIDs (timeout=3.0s, retries=2)")
+
             for idx, oid in enumerate(oids_values):
                 try:
                     # Verificar se é uma tabela
@@ -467,9 +470,9 @@ class OptimizedMonitor:
                         # Usar get_cmd para valores únicos
                         error_indication, error_status, error_index, var_binds = await asyncio.wait_for(
                             get_cmd(engine, auth_data,
-                                await UdpTransportTarget.create((ip, port), timeout=1.0, retries=1),
+                                await UdpTransportTarget.create((ip, port), timeout=3.0, retries=2),
                                 ContextData(), ObjectType(ObjectIdentity(oid))), 
-                            timeout=2.0
+                            timeout=5.0  # Timeout geral maior
                         )
 
                         if not (error_indication or error_status or error_index):
@@ -485,7 +488,13 @@ class OptimizedMonitor:
                     if self.logger:
                         logger.debug(f"SNMP error para {ip} OID {oid}: {e}")
                     result[oids_keys[idx]] = None
-                    raise
+                    # Não fazer raise aqui para permitir tentar outros OIDs
+            
+            # Log final do resultado
+            if self.logger:
+                successful_oids = sum(1 for v in result.values() if v is not None)
+                total_oids = len(result)
+                logger.debug(f"SNMP check {ip}: {successful_oids}/{total_oids} OIDs responderam")
             
             return result
 
@@ -518,14 +527,30 @@ class OptimizedMonitor:
 
         # Atualiza contadores de SNMP separadamente
         if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
-            if snmp_data and any(snmp_data.values()):
+            if is_snmp_data_valid(snmp_data):
                 self.hosts_status[ip].consecutive_snmp_failures = 0
                 # Guardar dados anteriores para comparação de performance
                 if hasattr(self.hosts_status[ip], 'snmp_data') and self.hosts_status[ip].snmp_data:
                     self.hosts_status[ip].previous_snmp_data = self.hosts_status[ip].snmp_data
+                
+                if self.logger:
+                    successful_oids = sum(1 for v in snmp_data.values() if v is not None and str(v).strip())
+                    total_oids = len(snmp_data)
+                    logger.debug(f"SNMP {ip}: {successful_oids}/{total_oids} OIDs retornaram dados válidos")
             else:
                 self.hosts_status[ip].consecutive_snmp_failures += 1
                 self.global_failure_count += 1
+                
+                if self.logger:
+                    if snmp_data:
+                        failed_oids = [k for k, v in snmp_data.items() if v is None or not str(v).strip()]
+                        logger.debug(f"SNMP {ip}: Falha na validação. OIDs falharam: {failed_oids}")
+                    else:
+                        logger.debug(f"SNMP {ip}: Nenhum dado retornado")
+        elif is_alive and check_ip_for_snmp(self.hosts_status[ip]):
+            # Host vivo mas sem dados SNMP (pode ser problema de conectividade SNMP)
+            self.hosts_status[ip].consecutive_snmp_failures += 1
+            self.global_failure_count += 1
 
         self.hosts_status[ip].is_alive = is_alive
         self.hosts_status[ip].snmp_data = snmp_data
@@ -730,7 +755,7 @@ class OptimizedMonitor:
         if (result.is_alive and 
             snmp_failures > self.max_consecutive_snmp_failures and
             check_ip_for_snmp(host_data) and
-            (not result.snmp_data or not any(result.snmp_data.values())) and
+            not is_snmp_data_valid(result.snmp_data) and
             not getattr(host_data, 'snmp_informed', False)):
             await self._process_alert(session_factory, "snmp_down", result, snmp_failures)
             host_data.consecutive_snmp_failures = 0
@@ -739,7 +764,7 @@ class OptimizedMonitor:
         # 4. Verificar snmp up (snmp voltou a responder)
         elif (result.is_alive and
               check_ip_for_snmp(host_data) and
-              result.snmp_data and any(result.snmp_data.values()) and
+              is_snmp_data_valid(result.snmp_data) and
               getattr(host_data, 'snmp_informed', False)):
             await self._process_alert(session_factory, "snmp_up", result, snmp_failures)
             host_data.consecutive_snmp_failures = 0
@@ -756,7 +781,7 @@ class OptimizedMonitor:
     
         # Enviar email de notificação
         name = result.nickname if result.nickname else ip
-        if check_ip_for_snmp(result) and result.snmp_data:
+        if check_ip_for_snmp(result) and is_snmp_data_valid(result.snmp_data):
             name = result.snmp_data.get('sysName')
             if not name and result.snmp_data.get('sysDescr'):
                 name = result.snmp_data['sysDescr'].split(' ')[0]
