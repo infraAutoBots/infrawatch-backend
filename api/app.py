@@ -1,6 +1,7 @@
 import os
-import sys
 import uvicorn
+import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,12 +12,41 @@ from alert_routes import alert_router
 from config_routes import config_router
 from sla_routes import sla_router
 
+from monitor import OptimizedMonitor
+
+
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Código executado ANTES da API iniciar
+    print("⚡ Modo OTIMIZADO ativado!")
+    print("🚀 Inicializando monitoramento...")
+    
+    # Inicializar o monitor
+    monitor = OptimizedMonitor(logger=False)
+
+    # Criar uma task em background para o monitoramento
+    monitoring_task = asyncio.create_task(monitor.run_monitoring(interval=30.0))
+    
+    print("✅ Monitoramento iniciado em background!")
+    
+    yield  # A API roda aqui
+    
+    # Código executado APÓS a API encerrar
+    print("🔄 Encerrando monitoramento...")
+    monitoring_task.cancel()
+    try:
+        await monitoring_task
+    except asyncio.CancelledError:
+        print("✅ Monitoramento encerrado com sucesso!")
 
 
 app = FastAPI(
     title="API de Monitoramento SNMP",
     description="API que gerencia dispositivos SNMP e coleta métricas em tempo real.",
-    version="2.0.1"
+    version="2.0.1",
+    lifespan=lifespan
 )
 
 
