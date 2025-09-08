@@ -18,7 +18,7 @@ from schemas import (
 )
 
 
-users_router = APIRouter(prefix="/users", tags=["users"])
+users_router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(verify_token)])
 
 
 def get_user_stats(session: Session) -> UserStatsSchemas:
