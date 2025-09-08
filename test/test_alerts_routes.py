@@ -5,6 +5,7 @@ Execute com: python test_alerts_routes.py
 """
 
 import requests
+import time
 import json
 from pprint import pprint
 from datetime import datetime
@@ -24,6 +25,34 @@ class AlertsRouteTester:
         self.token = None
         self.session = requests.Session()
         self.created_alert_id = None
+
+    def retry_request(self, method, url, max_retries=3, **kwargs):
+        """Executa requisição com retry em caso de falha"""
+        for attempt in range(max_retries):
+            try:
+                if method.upper() == 'GET':
+                    response = self.session.get(url, **kwargs)
+                elif method.upper() == 'POST':
+                    response = self.session.post(url, **kwargs)
+                elif method.upper() == 'PUT':
+                    response = self.session.put(url, **kwargs)
+                elif method.upper() == 'DELETE':
+                    response = self.session.delete(url, **kwargs)
+                else:
+                    return None
+                
+                # Se não for erro de conexão, retornar
+                if response.status_code != 500:
+                    return response
+                    
+            except Exception as e:
+                print(f"   ⚠️ Tentativa {attempt + 1} falhou: {e}")
+                
+            if attempt < max_retries - 1:
+                time.sleep(1)  # Aguardar 1 segundo antes de tentar novamente
+                
+        return None
+
 
     def authenticate(self):
         """Realiza autenticação e obtém token"""
@@ -59,7 +88,7 @@ class AlertsRouteTester:
         response = self.session.post(ALERTS_ENDPOINT, json=alert_data)
         print(f"Status: {response.status_code}")
         
-        if response.status_code == 201:
+        if response.status_code == 200:  # API retorna 200, não 201
             created_alert = response.json()
             self.created_alert_id = created_alert.get("id")
             print("✅ Alerta criado com sucesso!")

@@ -15,8 +15,8 @@ login() {
     RESPONSE=$(curl -s -X POST "$API_BASE/auth/login" \
         -H "Content-Type: application/json" \
         -d '{
-            "email": "admin@empresa.com",
-            "password": "admin123"
+            "email": "ndondadaniel2020@gmail.com",
+            "password": "ndondadaniel2020@gmail.com"
         }')
     
     TOKEN=$(echo $RESPONSE | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)

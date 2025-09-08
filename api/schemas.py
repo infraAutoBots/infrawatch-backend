@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from typing import Optional, List, Union, Any, Dict
+from typing import Optional, List, Dict
 import json
 from datetime import datetime
 from enum import Enum
@@ -91,6 +91,7 @@ class EndPointsDataSchemas(BaseModel):
     class Config:
         from_attributes = True
 
+
 class EndPointOIDsSchemas(BaseModel):
     """
     Schema para OIDs SNMP de um endpoint.
@@ -142,6 +143,7 @@ class AddEndPointRequest(BaseModel):
     class Config:
         from_attributes = True
 
+
 class LoginSchemas(BaseModel):
     """
     Schema para autenticação de usuário (login).
@@ -151,6 +153,7 @@ class LoginSchemas(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class ResponseEndPointsDataSchemas(BaseModel):
     """
@@ -262,10 +265,12 @@ class AlertSeverityEnum(str, Enum):
     MEDIUM = "medium"
     LOW = "low"
 
+
 class AlertStatusEnum(str, Enum):
     ACTIVE = "active"
     ACKNOWLEDGED = "acknowledged"
     RESOLVED = "resolved"
+
 
 class AlertCategoryEnum(str, Enum):
     INFRASTRUCTURE = "infrastructure"
@@ -273,10 +278,12 @@ class AlertCategoryEnum(str, Enum):
     PERFORMANCE = "performance"
     NETWORK = "network"
 
+
 class AlertImpactEnum(str, Enum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
+
 
 class AlertBaseSchema(BaseModel):
     """Schema base para alertas"""
@@ -289,9 +296,11 @@ class AlertBaseSchema(BaseModel):
     assignee: Optional[str] = None
     id_endpoint: Optional[int] = None
 
+
 class AlertCreateSchema(AlertBaseSchema):
     """Schema para criação de alertas"""
     pass
+
 
 class AlertUpdateSchema(BaseModel):
     """Schema para atualização de alertas"""
@@ -302,6 +311,7 @@ class AlertUpdateSchema(BaseModel):
     impact: Optional[AlertImpactEnum] = None
     assignee: Optional[str] = None
     status: Optional[AlertStatusEnum] = None
+
 
 class AlertResponseSchema(AlertBaseSchema):
     """Schema de resposta para alertas"""
@@ -324,6 +334,7 @@ class AlertResponseSchema(AlertBaseSchema):
     class Config:
         from_attributes = True
 
+
 class AlertLogSchema(BaseModel):
     """Schema para logs de alertas"""
     id: int
@@ -335,9 +346,11 @@ class AlertLogSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class AlertWithLogsSchema(AlertResponseSchema):
     """Schema de alerta com histórico de logs"""
     alert_logs: List[AlertLogSchema] = []
+
 
 class AlertFiltersSchema(BaseModel):
     """Schema para filtros de alertas"""
@@ -351,6 +364,7 @@ class AlertFiltersSchema(BaseModel):
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
 
+
 class PaginationSchema(BaseModel):
     """Schema para paginação"""
     page: int = 1
@@ -358,12 +372,14 @@ class PaginationSchema(BaseModel):
     total: int
     pages: int
 
+
 class AlertListResponseSchema(BaseModel):
     """Schema de resposta para lista paginada de alertas"""
     success: bool = True
     data: List[AlertResponseSchema]
     pagination: PaginationSchema
     filters_applied: AlertFiltersSchema
+
 
 class AlertStatsSchema(BaseModel):
     """Schema para estatísticas de alertas"""
@@ -377,6 +393,7 @@ class AlertStatsSchema(BaseModel):
     average_resolution_time: str  # MTTR médio
     by_category: dict
     by_system: dict
+
 
 class AlertActionSchema(BaseModel):
     """Schema para ações nos alertas"""
@@ -424,6 +441,7 @@ class EmailConfigSchema(BaseModel):
     password: str
     port: int
     server: str
+    active: bool
 
     class Config:
         from_attributes = True

@@ -1,0 +1,76 @@
+✅ API está rodando em http://localhost:8000
+🧪 Iniciando testes das rotas de SLA...
+==================================================
+✅ Autenticação realizada com sucesso
+
+🔍 Executando: SLA Summary
+
+📊 Testando endpoint de resumo SLA...
+Status (30 dias): 200
+✅ Resumo SLA obtido com sucesso
+   - Endpoints encontrados: 0
+   - Métricas SLA: 0
+   - Incidentes: 0
+   - Dados de performance: 0
+   - Alertas: 0
+Status (7 dias): 200
+✅ Resumo para 7 dias obtido com sucesso
+Status (15 dias): 200
+✅ Resumo para 15 dias obtido com sucesso
+Status (60 dias): 200
+✅ Resumo para 60 dias obtido com sucesso
+Status (90 dias): 200
+✅ Resumo para 90 dias obtido com sucesso
+✅ SLA Summary - PASSOU
+
+🔍 Executando: SLA Endpoint Specific
+
+🎯 Testando endpoint específico por endpoint...
+Status (endpoint 1): 200
+✅ SLA do endpoint 1 obtido com sucesso
+   - Chaves disponíveis: ['status', 'data']
+Status (endpoint 2): 200
+Status (endpoint 3): 200
+✅ SLA Endpoint Specific - PASSOU
+
+🔍 Executando: SLA Incidents Summary
+
+� Testando resumo de incidentes...
+Status: 200
+✅ Resumo de incidentes obtido com sucesso
+   - Chaves disponíveis: ['status', 'data']
+Status (filtro {'days': 7}): 200
+Status (filtro {'days': 30}): 200
+Status (filtro {'endpoint_id': 1}): 200
+✅ SLA Incidents Summary - PASSOU
+
+🔍 Executando: SLA Performance Metrics
+
+📈 Testando métricas de performance...
+Status: 200
+✅ Métricas de performance obtidas com sucesso
+   - Chaves disponíveis: ['status', 'data']
+Status (filtro {'endpoint_id': 1}): 200
+Status (filtro {'days': 7}): 200
+Status (filtro {'days': 30}): 200
+✅ SLA Performance Metrics - PASSOU
+
+🔍 Executando: SLA Compliance
+
+✅ Testando endpoint de compliance...
+Status: 200
+✅ Compliance SLA obtido com sucesso
+   - Estrutura dos dados: <class 'dict'>
+Status (target 99.0%): 200
+Status (target 99.5%): 200
+Status (target 99.9%): 200
+Status (target 99.95%): 200
+✅ SLA Compliance - PASSOU
+
+==================================================
+📊 RESUMO DOS TESTES DE SLA:
+   Total: 5
+   Passou: 5
+   Falhou: 0
+   Taxa de sucesso: 100.0%
+==================================================

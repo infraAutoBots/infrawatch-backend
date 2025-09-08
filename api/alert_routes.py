@@ -6,12 +6,162 @@ from models import Users, Alerts, AlertLogs
 from schemas import (
     AlertCreateSchema, AlertUpdateSchema, AlertResponseSchema,
     AlertListResponseSchema, AlertFiltersSchema, PaginationSchema,
-    AlertStatsSchema, AlertActionSchema, AlertWithLogsSchema
+    AlertStatsSchema, AlertActionSchema, AlertWithLogsSchema,
+    AlertSeverityEnum, AlertStatusEnum, AlertCategoryEnum, AlertImpactEnum
 )
 from typing import List, Optional
 from datetime import datetime
 import math
 
+
+
+# Mapeamentos para normalizar valores em português para inglês
+SEVERITY_MAPPING = {
+    'critico': 'critical',
+    'crítico': 'critical',
+    'alto': 'high',
+    'medio': 'medium',
+    'médio': 'medium',
+    'baixo': 'low',
+    'critical': 'critical',
+    'high': 'high',
+    'medium': 'medium',
+    'low': 'low'
+}
+
+STATUS_MAPPING = {
+    'aberto': 'open',
+    'em_progresso': 'in_progress',
+    'em progresso': 'in_progress',
+    'resolvido': 'resolved',
+    'fechado': 'closed',
+    'open': 'open',
+    'in_progress': 'in_progress',
+    'resolved': 'resolved',
+    'closed': 'closed'
+}
+
+IMPACT_MAPPING = {
+    'alto': 'high',
+    'medio': 'medium',
+    'médio': 'medium',
+    'baixo': 'low',
+    'high': 'high',
+    'medium': 'medium',
+    'low': 'low'
+}
+
+CATEGORY_MAPPING = {
+    'rede': 'network',
+    'sistema': 'system',
+    'aplicacao': 'application',
+    'aplicação': 'application',
+    'seguranca': 'security',
+    'segurança': 'security',
+    'network': 'network',
+    'system': 'system',
+    'application': 'application',
+    'security': 'security'
+}
+
+
+def _normalize_filter_values(values: Optional[List[str]], mapping: dict) -> Optional[List[str]]:
+    """
+    Normaliza valores de filtro usando mapeamento fornecido.
+    Remove valores inválidos e converte português para inglês.
+    """
+    if not values:
+        return None
+    
+    normalized = []
+    for value in values:
+        if value and value.lower() in mapping:
+            normalized_value = mapping[value.lower()]
+            if normalized_value not in normalized:
+                normalized.append(normalized_value)
+    
+    return normalized if normalized else None
+
+
+def _safe_build_filters(
+    search: Optional[str],
+    severity: Optional[List[str]],
+    status: Optional[List[str]],
+    category: Optional[List[str]],
+    impact: Optional[List[str]],
+    assignee: Optional[str],
+    system: Optional[str],
+    date_from: Optional[datetime],
+    date_to: Optional[datetime]
+) -> AlertFiltersSchema:
+    """
+    Constrói filtros de forma segura, normalizando valores e tratando erros.
+    """
+    try:
+        # Normalizar valores usando mapeamentos
+        normalized_severity = _normalize_filter_values(severity, SEVERITY_MAPPING)
+        normalized_status = _normalize_filter_values(status, STATUS_MAPPING)
+        normalized_category = _normalize_filter_values(category, CATEGORY_MAPPING)
+        normalized_impact = _normalize_filter_values(impact, IMPACT_MAPPING)
+        
+        # Converter para enums
+        severity_enums = None
+        if normalized_severity:
+            severity_enums = []
+            for sev in normalized_severity:
+                try:
+                    severity_enums.append(AlertSeverityEnum(sev))
+                except ValueError:
+                    continue  # Ignorar valores inválidos
+        
+        status_enums = None
+        if normalized_status:
+            status_enums = []
+            for stat in normalized_status:
+                try:
+                    status_enums.append(AlertStatusEnum(stat))
+                except ValueError:
+                    continue
+        
+        category_enums = None
+        if normalized_category:
+            category_enums = []
+            for cat in normalized_category:
+                try:
+                    category_enums.append(AlertCategoryEnum(cat))
+                except ValueError:
+                    continue
+        
+        impact_enums = None
+        if normalized_impact:
+            impact_enums = []
+            for imp in normalized_impact:
+                try:
+                    impact_enums.append(AlertImpactEnum(imp))
+                except ValueError:
+                    continue
+        
+        return AlertFiltersSchema(
+            search=search,
+            severity=severity_enums,
+            status=status_enums,
+            category=category_enums,
+            impact=impact_enums,
+            assignee=assignee,
+            system=system,
+            date_from=date_from,
+            date_to=date_to
+        )
+    
+    except Exception as e:
+        # Em caso de erro, retornar filtros básicos
+        return AlertFiltersSchema(
+            search=search,
+            assignee=assignee,
+            system=system,
+            date_from=date_from,
+            date_to=date_to
+        )
 
 
 alert_router = APIRouter(prefix="/alerts", tags=["alerts"], dependencies=[Depends(verify_token)])
@@ -124,9 +274,10 @@ async def list_alerts(
 ):
     """
     Lista alertas com suporte a paginação e filtros avançados.
+    Suporta valores em português e inglês, ignorando valores inválidos.
     """
-    # Construir filtros
-    filters = AlertFiltersSchema(
+    # Construir filtros de forma segura
+    filters = _safe_build_filters(
         search=search,
         severity=severity,
         status=status,
