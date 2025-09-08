@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
         monitor = OptimizedMonitor(logger=False)
         
         # Criar uma task em background para o monitoramento
-        monitoring_task = asyncio.create_task(monitor.run_monitoring(interval=30.0))
+        monitoring_task = asyncio.create_task(monitor.run_monitoring(interval=90.0))
         print("✅ Monitoramento iniciado em background!")
         
     except Exception as e:
