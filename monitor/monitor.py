@@ -513,7 +513,7 @@ class OptimizedMonitor:
     async def check_hosts_db(self):
         session = init_session()
         try:
-            data = session.query(EndPoints).all()
+            data = session.query(EndPoints).filter(EndPoints.active == True).all()
             new_hosts = {row.ip: get_HostStatus(row, session) for row in data}
             
             async with self.lock:
@@ -521,7 +521,7 @@ class OptimizedMonitor:
                 for ip in list(self.hosts_status.keys()):
                     if ip not in new_hosts:
                         del self.hosts_status[ip]
-                
+
                 for ip, host in new_hosts.items():
                     if ip in self.hosts_status:
                         # Preserva TODOS os contadores e estadísticas de falha
