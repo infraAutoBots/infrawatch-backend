@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, DateTime, ForeignKey, Float
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 from enum import Enum
@@ -493,6 +493,199 @@ class PerformanceThresholds(Base):
         self.warning_threshold = warning_threshold
         self.critical_threshold = critical_threshold
         self.enabled = enabled
+
+
+class SLAMetrics(Base):
+    """
+    Modelo ORM para métricas de SLA agregadas.
+    Armazena dados de disponibilidade, MTTR, MTBF e compliance de SLA por endpoint.
+    """
+    __tablename__ = 'sla_metrics'
+    
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    endpoint_id = Column("endpoint_id", Integer, ForeignKey("endpoints.id"), nullable=False)
+    timestamp = Column("timestamp", DateTime, default=func.now(), nullable=False)
+    
+    # Métricas de Disponibilidade
+    availability_percentage = Column("availability_percentage", Float, nullable=False)
+    uptime_seconds = Column("uptime_seconds", Integer, default=0)
+    downtime_seconds = Column("downtime_seconds", Integer, default=0)
+    
+    # Métricas de Qualidade de Serviço
+    mttr_minutes = Column("mttr_minutes", Float, nullable=True)  # Mean Time To Recovery
+    mtbf_hours = Column("mtbf_hours", Float, nullable=True)  # Mean Time Between Failures
+    incidents_count = Column("incidents_count", Integer, default=0)
+    
+    # SLA Compliance
+    sla_target = Column("sla_target", Float, default=99.9)  # Target SLA em %
+    sla_compliance = Column("sla_compliance", Boolean, nullable=False)
+    sla_breach_minutes = Column("sla_breach_minutes", Float, default=0.0)
+    
+    # Métricas de Performance
+    avg_response_time = Column("avg_response_time", Float, nullable=True)  # ms
+    max_response_time = Column("max_response_time", Float, nullable=True)  # ms
+    min_response_time = Column("min_response_time", Float, nullable=True)  # ms
+    
+    # Período de medição
+    measurement_period_hours = Column("measurement_period_hours", Integer, default=24)
+    
+    # Relacionamentos
+    endpoint = relationship("EndPoints", backref="sla_metrics")
+    
+    def __init__(self, endpoint_id, availability_percentage, uptime_seconds=0, 
+                 downtime_seconds=0, sla_target=99.9, incidents_count=0):
+        """
+        Inicializa uma nova métrica de SLA.
+        Args:
+            endpoint_id (int): ID do endpoint.
+            availability_percentage (float): Percentual de disponibilidade.
+            uptime_seconds (int): Tempo online em segundos.
+            downtime_seconds (int): Tempo offline em segundos.
+            sla_target (float): Meta de SLA em porcentagem.
+            incidents_count (int): Número de incidentes no período.
+        """
+        self.endpoint_id = endpoint_id
+        self.availability_percentage = availability_percentage
+        self.uptime_seconds = uptime_seconds
+        self.downtime_seconds = downtime_seconds
+        self.sla_target = sla_target
+        self.sla_compliance = availability_percentage >= sla_target
+        self.incidents_count = incidents_count
+
+
+class IncidentTracking(Base):
+    """
+    Modelo ORM para rastreamento estruturado de incidentes.
+    Registra início, fim, duração e detalhes de cada incidente.
+    """
+    __tablename__ = 'incidents'
+    
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    endpoint_id = Column("endpoint_id", Integer, ForeignKey("endpoints.id"), nullable=False)
+    alert_id = Column("alert_id", Integer, ForeignKey("alerts.id"), nullable=True)
+    
+    # Dados do Incidente
+    incident_type = Column("incident_type", String(50), nullable=False)  # ping_down, snmp_down, performance
+    severity = Column("severity", String(50), default="medium")
+    status = Column("status", String(50), default="open")  # open, investigating, resolved, closed
+    
+    # Tempos
+    start_time = Column("start_time", DateTime, default=func.now(), nullable=False)
+    end_time = Column("end_time", DateTime, nullable=True)
+    duration_seconds = Column("duration_seconds", Integer, nullable=True)
+    
+    # Detalhes
+    root_cause = Column("root_cause", Text, nullable=True)
+    impact_description = Column("impact_description", Text, nullable=True)
+    resolution_notes = Column("resolution_notes", Text, nullable=True)
+    
+    # Responsáveis
+    detected_by = Column("detected_by", String(100), default="automated_monitoring")
+    resolved_by = Column("resolved_by", Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Métricas do Incidente
+    response_time_minutes = Column("response_time_minutes", Float, nullable=True)  # Tempo até resposta
+    resolution_time_minutes = Column("resolution_time_minutes", Float, nullable=True)  # Tempo até resolução
+    
+    # Relacionamentos
+    endpoint = relationship("EndPoints", backref="incidents")
+    alert = relationship("Alerts", backref="incident")
+    resolver = relationship("Users", backref="resolved_incidents")
+    
+    def __init__(self, endpoint_id, incident_type, severity="medium", 
+                 impact_description=None, alert_id=None):
+        """
+        Inicializa um novo incidente.
+        Args:
+            endpoint_id (int): ID do endpoint afetado.
+            incident_type (str): Tipo do incidente.
+            severity (str): Severidade do incidente.
+            impact_description (str): Descrição do impacto.
+            alert_id (int): ID do alerta relacionado.
+        """
+        self.endpoint_id = endpoint_id
+        self.incident_type = incident_type
+        self.severity = severity
+        self.impact_description = impact_description
+        self.alert_id = alert_id
+    
+    def close_incident(self, resolved_by_user_id=None, resolution_notes=None):
+        """
+        Fecha o incidente calculando duração e métricas.
+        Args:
+            resolved_by_user_id (int): ID do usuário que resolveu.
+            resolution_notes (str): Notas da resolução.
+        """
+        from datetime import datetime
+        self.end_time = datetime.now()
+        self.status = "resolved"
+        self.resolved_by = resolved_by_user_id
+        self.resolution_notes = resolution_notes
+        
+        if self.start_time:
+            delta = self.end_time - self.start_time
+            self.duration_seconds = int(delta.total_seconds())
+            self.resolution_time_minutes = delta.total_seconds() / 60
+
+
+class PerformanceMetrics(Base):
+    """
+    Modelo ORM para métricas de performance agregadas.
+    Armazena percentis e estatísticas de performance por endpoint.
+    """
+    __tablename__ = 'performance_metrics'
+    
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    endpoint_id = Column("endpoint_id", Integer, ForeignKey("endpoints.id"), nullable=False)
+    timestamp = Column("timestamp", DateTime, default=func.now(), nullable=False)
+    
+    # Métricas de Tempo de Resposta (em ms)
+    response_time_p50 = Column("response_time_p50", Float, nullable=True)  # Mediana
+    response_time_p90 = Column("response_time_p90", Float, nullable=True)
+    response_time_p95 = Column("response_time_p95", Float, nullable=True)
+    response_time_p99 = Column("response_time_p99", Float, nullable=True)
+    response_time_p99_9 = Column("response_time_p99_9", Float, nullable=True)
+    response_time_avg = Column("response_time_avg", Float, nullable=True)
+    response_time_max = Column("response_time_max", Float, nullable=True)
+    response_time_min = Column("response_time_min", Float, nullable=True)
+    
+    # Métricas de Taxa de Erro
+    error_rate_percentage = Column("error_rate_percentage", Float, default=0.0)
+    total_requests = Column("total_requests", Integer, default=0)
+    failed_requests = Column("failed_requests", Integer, default=0)
+    
+    # Métricas de Throughput
+    requests_per_second = Column("requests_per_second", Float, nullable=True)
+    throughput_mbps = Column("throughput_mbps", Float, nullable=True)
+    
+    # Métricas de Qualidade
+    jitter_ms = Column("jitter_ms", Float, nullable=True)  # Variação no tempo de resposta
+    packet_loss_rate = Column("packet_loss_rate", Float, default=0.0)
+    
+    # Período da medição
+    measurement_period_minutes = Column("measurement_period_minutes", Integer, default=60)
+    sample_count = Column("sample_count", Integer, default=0)
+    
+    # Relacionamentos
+    endpoint = relationship("EndPoints", backref="performance_metrics")
+    
+    def __init__(self, endpoint_id, response_time_avg=None, error_rate_percentage=0.0,
+                 total_requests=0, measurement_period_minutes=60):
+        """
+        Inicializa uma nova métrica de performance.
+        Args:
+            endpoint_id (int): ID do endpoint.
+            response_time_avg (float): Tempo médio de resposta em ms.
+            error_rate_percentage (float): Taxa de erro em %.
+            total_requests (int): Total de requisições no período.
+            measurement_period_minutes (int): Período de medição em minutos.
+        """
+        self.endpoint_id = endpoint_id
+        self.response_time_avg = response_time_avg
+        self.error_rate_percentage = error_rate_percentage
+        self.total_requests = total_requests
+        self.failed_requests = int((error_rate_percentage / 100.0) * total_requests)
+        self.measurement_period_minutes = measurement_period_minutes
 
 
 # executar a criacao dos metadados do banco de dados
