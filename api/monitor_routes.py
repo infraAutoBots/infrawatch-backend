@@ -3,7 +3,7 @@ from dependencies import init_session, verify_token
 from sqlalchemy.orm import Session
 from models import Users, EndPoints, EndPointsData, EndPointOIDs
 from schemas import EndPointsDataSchemas, AddEndPointRequest
-from utils import valid_end_point
+from utils_api import valid_end_point
 from typing import Dict, Any, Optional
 
 
