@@ -23,8 +23,12 @@ from performance_alerts import (should_alert_cpu, should_alert_memory,
                                should_alert_storage, should_alert_network,
                                initialize_default_thresholds)
 
-from models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig
+from models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig, SLAMetrics, IncidentTracking, PerformanceMetrics
 
+import asyncio
+import os
+import sys
+import time
 from pprint import pprint
 
 
@@ -133,6 +137,223 @@ def create_alert(title: str, description: str, severity: str,
     session.commit()
 
 
+class SLADataCollector:
+    """
+    Coletor de dados para métricas de SLA.
+    Calcula disponibilidade, MTTR, MTBF e compliance de SLA.
+    """
+    
+    def __init__(self):
+        self.sla_buffer = {}
+        self.incident_tracking = {}
+        
+    def calculate_percentile(self, data_list: List[float], percentile: float) -> float:
+        """Calcula percentil manualmente sem numpy"""
+        if not data_list:
+            return 0.0
+        
+        sorted_data = sorted(data_list)
+        index = (percentile / 100.0) * (len(sorted_data) - 1)
+        
+        if index.is_integer():
+            return sorted_data[int(index)]
+        else:
+            lower_index = int(index)
+            upper_index = lower_index + 1
+            if upper_index >= len(sorted_data):
+                return sorted_data[lower_index]
+            
+            # Interpolação linear
+            weight = index - lower_index
+            return sorted_data[lower_index] * (1 - weight) + sorted_data[upper_index] * weight
+    
+    async def collect_sla_metrics(self, host_result: HostStatus, session_factory):
+        """Coleta métricas específicas para SLA"""
+        ip = host_result.ip
+        endpoint_id = host_result._id
+        
+        # Inicializar buffer se necessário
+        if ip not in self.sla_buffer:
+            self.sla_buffer[ip] = {
+                'last_state': host_result.is_alive,
+                'last_change': datetime.now(),
+                'uptime_seconds': 0,
+                'downtime_seconds': 0,
+                'response_times': [],
+                'incidents': [],
+                'last_sla_save': datetime.now()
+            }
+        
+        buffer = self.sla_buffer[ip]
+        now = datetime.now()
+        time_diff = (now - buffer['last_change']).total_seconds()
+        
+        # Acumular tempo baseado no estado anterior
+        if buffer['last_state']:
+            buffer['uptime_seconds'] += time_diff
+        else:
+            buffer['downtime_seconds'] += time_diff
+            
+        # Coletar tempo de resposta
+        if host_result.ping_rtt > 0:
+            buffer['response_times'].append(host_result.ping_rtt)
+            # Manter apenas os últimos 1000 tempos de resposta
+            if len(buffer['response_times']) > 1000:
+                buffer['response_times'] = buffer['response_times'][-1000:]
+        
+        # Verificar mudança de estado para tracking de incidentes
+        if buffer['last_state'] != host_result.is_alive:
+            if not host_result.is_alive:
+                # Início de incidente
+                await self._create_incident(endpoint_id, host_result, session_factory)
+            else:
+                # Fim de incidente
+                await self._resolve_incident(endpoint_id, host_result, session_factory)
+                
+        buffer['last_state'] = host_result.is_alive
+        buffer['last_change'] = now
+        
+        # Salvar métricas SLA a cada hora
+        if (now - buffer['last_sla_save']).seconds >= 3600:  # 1 hora
+            await self._save_sla_metrics(endpoint_id, buffer, session_factory)
+            buffer['last_sla_save'] = now
+        
+        return buffer
+    
+    async def _create_incident(self, endpoint_id: int, host_result: HostStatus, session_factory):
+        """Cria um novo incidente no banco"""
+        session = session_factory()
+        try:
+            incident_type = "ping_down" if not host_result.is_alive else "snmp_down"
+            impact_desc = f"Host {host_result.ip} está inacessível via {'ping' if not host_result.is_alive else 'SNMP'}"
+            
+            incident = IncidentTracking(
+                endpoint_id=endpoint_id,
+                incident_type=incident_type,
+                severity="high" if not host_result.is_alive else "medium",
+                impact_description=impact_desc
+            )
+            
+            session.add(incident)
+            session.commit()
+            
+            # Guardar referência do incidente
+            self.incident_tracking[host_result.ip] = incident.id
+            
+        except Exception as e:
+            print(f"Erro ao criar incidente: {e}")
+            session.rollback()
+        finally:
+            session.close()
+    
+    async def _resolve_incident(self, endpoint_id: int, host_result: HostStatus, session_factory):
+        """Resolve incidente ativo"""
+        if host_result.ip not in self.incident_tracking:
+            return
+            
+        session = session_factory()
+        try:
+            incident_id = self.incident_tracking[host_result.ip]
+            incident = session.query(IncidentTracking).filter(
+                IncidentTracking.id == incident_id,
+                IncidentTracking.status == "open"
+            ).first()
+            
+            if incident:
+                incident.close_incident(
+                    resolution_notes=f"Host {host_result.ip} voltou a responder"
+                )
+                session.commit()
+            
+            # Remove da tracking
+            del self.incident_tracking[host_result.ip]
+            
+        except Exception as e:
+            print(f"Erro ao resolver incidente: {e}")
+            session.rollback()
+        finally:
+            session.close()
+    
+    async def _save_sla_metrics(self, endpoint_id: int, buffer: dict, session_factory):
+        """Salva métricas de SLA agregadas no banco"""
+        session = session_factory()
+        try:
+            total_seconds = buffer['uptime_seconds'] + buffer['downtime_seconds']
+            availability = 0.0
+            
+            if total_seconds > 0:
+                availability = (buffer['uptime_seconds'] / total_seconds) * 100
+            
+            # Calcular métricas de performance
+            response_times = buffer['response_times']
+            avg_response = sum(response_times) / len(response_times) if response_times else 0
+            max_response = max(response_times) if response_times else 0
+            min_response = min(response_times) if response_times else 0
+            
+            # Calcular MTTR baseado em incidentes resolvidos das últimas 24h
+            twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
+            recent_incidents = session.query(IncidentTracking).filter(
+                IncidentTracking.endpoint_id == endpoint_id,
+                IncidentTracking.start_time >= twenty_four_hours_ago,
+                IncidentTracking.status == "resolved"
+            ).all()
+            
+            mttr_minutes = None
+            incidents_count = len(recent_incidents)
+            
+            if recent_incidents:
+                total_resolution_time = sum(
+                    incident.resolution_time_minutes or 0 
+                    for incident in recent_incidents
+                )
+                mttr_minutes = total_resolution_time / len(recent_incidents)
+            
+            # Criar registro de SLA
+            sla_metric = SLAMetrics(
+                endpoint_id=endpoint_id,
+                availability_percentage=availability,
+                uptime_seconds=buffer['uptime_seconds'],
+                downtime_seconds=buffer['downtime_seconds'],
+                mttr_minutes=mttr_minutes,
+                incidents_count=incidents_count,
+                avg_response_time=avg_response,
+                max_response_time=max_response,
+                min_response_time=min_response,
+                sla_target=99.9
+            )
+            
+            session.add(sla_metric)
+            
+            # Calcular e salvar métricas de performance detalhadas
+            if response_times:
+                perf_metric = PerformanceMetrics(
+                    endpoint_id=endpoint_id,
+                    response_time_p50=self.calculate_percentile(response_times, 50),
+                    response_time_p90=self.calculate_percentile(response_times, 90),
+                    response_time_p95=self.calculate_percentile(response_times, 95),
+                    response_time_p99=self.calculate_percentile(response_times, 99),
+                    response_time_p99_9=self.calculate_percentile(response_times, 99.9),
+                    response_time_avg=avg_response,
+                    response_time_max=max_response,
+                    response_time_min=min_response,
+                    total_requests=len(response_times),
+                    sample_count=len(response_times)
+                )
+                session.add(perf_metric)
+            
+            session.commit()
+            
+            # Reset dos contadores
+            buffer['uptime_seconds'] = 0
+            buffer['downtime_seconds'] = 0
+            buffer['response_times'] = []
+            
+        except Exception as e:
+            print(f"Erro ao salvar métricas SLA: {e}")
+            session.rollback()
+        finally:
+            session.close()
+
 
 class OptimizedMonitor:
     def __init__(self, logger = False, session: Session = init_session()):
@@ -153,6 +374,9 @@ class OptimizedMonitor:
         
         # Performance alerts tracking
         self._last_performance_alerts = {}
+        
+        # SLA Data Collector
+        self.sla_collector = SLADataCollector()
         
         # Inicializar thresholds padrão
         initialize_default_thresholds(session)
@@ -878,6 +1102,7 @@ class OptimizedMonitor:
                         self.send_alert(session_factory, result),
                         self._check_performance_alerts(result, session_factory),
                         self.insert_snmp_data_async(session_factory, result),
+                        self.sla_collector.collect_sla_metrics(result, session_factory),
                         return_exceptions=True
                     )
 
