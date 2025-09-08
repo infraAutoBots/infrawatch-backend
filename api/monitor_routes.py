@@ -47,6 +47,7 @@ async def add_ip(
         end_point.community,
         end_point.port,
         end_point.user,
+        True,
         end_point.authKey,
         end_point.privKey,
         logged_user.id
@@ -187,6 +188,7 @@ async def update_ip_info(
     endpoint.community = end_point.community
     endpoint.port = end_point.port
     endpoint.user = end_point.user
+    endpoint.active = end_point.active
     endpoint.authKey = end_point.authKey
     endpoint.privKey = end_point.privKey
 

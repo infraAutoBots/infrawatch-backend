@@ -46,6 +46,7 @@ class EndPointsDataSchemas(BaseModel):
     """
     id_end_point: int
     status: bool
+    active: Optional[bool] = True
     sysDescr: Optional[str]
     sysName: Optional[str]
     sysUpTime: Optional[str]
@@ -121,6 +122,7 @@ class AddEndPointRequest(BaseModel):
     version: Optional[str]
     community: Optional[str]
     port: Optional[int] | None
+    active: Optional[bool] = True
     user: Optional[str]
     authKey: Optional[str]
     privKey: Optional[str]

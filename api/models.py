@@ -80,13 +80,14 @@ class EndPoints(Base):
     community = Column("community", String)
     port = Column("port", Integer)
     user = Column("user", String)
+    active = Column("active", Boolean, default=True)
     authKey = Column("authKey", String)
     privKey = Column("privKey", String)
     id_user = Column("id_usuario", Integer, ForeignKey('users.id'))
     end_points_data = relationship("EndPointsData", cascade="all, delete")
     end_points_oids = relationship("EndPointOIDs", cascade="all, delete")
 
-    def __init__(self, ip, nickname, interval, version, community, port, user, authKey, privKey, id_user):
+    def __init__(self, ip, nickname, interval, version, community, port, user, active, authKey, privKey, id_user):
         """
         Inicializa um novo endpoint monitorado.
         Args:
@@ -97,6 +98,7 @@ class EndPoints(Base):
             community (str): Comunidade SNMP.
             port (int): Porta SNMP.
             user (str): Usuário SNMPv3.
+            active (bool): Se o endpoint está ativo.
             authKey (str): Chave de autenticação SNMPv3.
             privKey (str): Chave privada SNMPv3.
             id_user (int): ID do usuário proprietário.
@@ -108,6 +110,7 @@ class EndPoints(Base):
         self.community = community
         self.port = port
         self.user = user
+        self.active = active
         self.authKey = authKey
         self.privKey = privKey
         self.id_user = id_user
@@ -240,12 +243,10 @@ class AlertSeverity(str, Enum):
     MEDIUM = "medium"
     LOW = "low"
 
-
 class AlertStatus(str, Enum):
     ACTIVE = "active"
     ACKNOWLEDGED = "acknowledged"
     RESOLVED = "resolved"
-
 
 class AlertCategory(str, Enum):
     INFRASTRUCTURE = "infrastructure"
@@ -253,12 +254,10 @@ class AlertCategory(str, Enum):
     PERFORMANCE = "performance"
     NETWORK = "network"
 
-
 class AlertImpact(str, Enum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
-
 
 class Alerts(Base):
     """
