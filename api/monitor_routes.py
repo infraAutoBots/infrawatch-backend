@@ -47,7 +47,7 @@ async def add_ip(
         end_point.community,
         end_point.port,
         end_point.user,
-        True,
+        end_point.active,
         end_point.authKey,
         end_point.privKey,
         logged_user.id
@@ -81,15 +81,38 @@ async def add_ip(
 
 
 @monitor_router.get("/history", response_model=Dict[str, Any])
-async def get_status(session: Session = Depends(init_session)) -> dict:
+async def get_history(session: Session = Depends(init_session)) -> dict:
     """
-    Obtém o status de todos os dispositivos monitorados.
+    Obtém o histórico de todos os dispositivos monitorados.
     """
     list_data = []
     all_data = session.query(EndPoints).all()
     for data in all_data:
         endpoint_data = session.query(EndPointsData).filter(EndPointsData.id_end_point == data.id).all()
-        endpoint_data_serialized = [EndPointsDataSchemas.model_validate(d) for d in endpoint_data]
+        endpoint_data_serialized = []
+        for d in endpoint_data:
+            # Cria um dicionário com os dados do EndPointsData e adiciona o campo active do endpoint
+            data_dict = {
+                'id_end_point': d.id_end_point,
+                'status': d.status,
+                'active': data.active,  # Campo do endpoint
+                'sysDescr': d.sysDescr,
+                'sysName': d.sysName,
+                'sysUpTime': d.sysUpTime,
+                'hrProcessorLoad': d.hrProcessorLoad,
+                'memTotalReal': d.memTotalReal,
+                'memAvailReal': d.memAvailReal,
+                'hrStorageSize': d.hrStorageSize,
+                'hrStorageUsed': d.hrStorageUsed,
+                'hrStorageDescr': d.hrStorageDescr,
+                'ifOperStatus': d.ifOperStatus,
+                'ifInOctets': d.ifInOctets,
+                'ifOutOctets': d.ifOutOctets,
+                'ping_rtt': d.ping_rtt,
+                'snmp_rtt': d.snmp_rtt,
+                'last_updated': d.last_updated
+            }
+            endpoint_data_serialized.append(EndPointsDataSchemas.model_validate(data_dict))
         list_data.append({"endpoint": data.ip, "data": endpoint_data_serialized})
     
     return {"success": True, "data": list_data}
@@ -107,7 +130,32 @@ async def get_status(session: Session = Depends(init_session)) -> dict:
         last_data = (session.query(EndPointsData)
                      .filter(EndPointsData.id_end_point == data.id)
                      .order_by(EndPointsData.id.desc()).first())
-        last_data_serialize = EndPointsDataSchemas.model_validate(last_data) if last_data else None
+        
+        last_data_serialize = None
+        if last_data:
+            # Cria um dicionário com os dados do EndPointsData e adiciona o campo active do endpoint
+            data_dict = {
+                'id_end_point': last_data.id_end_point,
+                'status': last_data.status,
+                'active': data.active,  # Campo do endpoint
+                'sysDescr': last_data.sysDescr,
+                'sysName': last_data.sysName,
+                'sysUpTime': last_data.sysUpTime,
+                'hrProcessorLoad': last_data.hrProcessorLoad,
+                'memTotalReal': last_data.memTotalReal,
+                'memAvailReal': last_data.memAvailReal,
+                'hrStorageSize': last_data.hrStorageSize,
+                'hrStorageUsed': last_data.hrStorageUsed,
+                'hrStorageDescr': last_data.hrStorageDescr,
+                'ifOperStatus': last_data.ifOperStatus,
+                'ifInOctets': last_data.ifInOctets,
+                'ifOutOctets': last_data.ifOutOctets,
+                'ping_rtt': last_data.ping_rtt,
+                'snmp_rtt': last_data.snmp_rtt,
+                'last_updated': last_data.last_updated
+            }
+            last_data_serialize = EndPointsDataSchemas.model_validate(data_dict)
+        
         snmp = None
         if last_data:
             snmp = session.query(EndPointOIDs).filter(EndPointOIDs.id_end_point == last_data.id)
@@ -157,7 +205,28 @@ async def get_ip_info(
     )
     # Converte o objeto SQLAlchemy para schema Pydantic se existir
     if last_data:
-        return EndPointsDataSchemas.model_validate(last_data)
+        # Cria um dicionário com os dados do EndPointsData e adiciona o campo active do endpoint
+        data_dict = {
+            'id_end_point': last_data.id_end_point,
+            'status': last_data.status,
+            'active': endpoint.active,  # Campo do endpoint, não do data
+            'sysDescr': last_data.sysDescr,
+            'sysName': last_data.sysName,
+            'sysUpTime': last_data.sysUpTime,
+            'hrProcessorLoad': last_data.hrProcessorLoad,
+            'memTotalReal': last_data.memTotalReal,
+            'memAvailReal': last_data.memAvailReal,
+            'hrStorageSize': last_data.hrStorageSize,
+            'hrStorageUsed': last_data.hrStorageUsed,
+            'hrStorageDescr': last_data.hrStorageDescr,
+            'ifOperStatus': last_data.ifOperStatus,
+            'ifInOctets': last_data.ifInOctets,
+            'ifOutOctets': last_data.ifOutOctets,
+            'ping_rtt': last_data.ping_rtt,
+            'snmp_rtt': last_data.snmp_rtt,
+            'last_updated': last_data.last_updated
+        }
+        return EndPointsDataSchemas.model_validate(data_dict)
     return None
 
 

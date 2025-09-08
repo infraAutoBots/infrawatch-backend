@@ -612,3 +612,1513 @@ nalizeo meu nomitoramento nao esta a consegui resolver o falso negativo do dgg.g
 
 
 
+
+
+
+{
+  "ip": "string",
+  "interval": 0,
+  "nickname": "string",
+  "version": "string",
+  "community": "string",
+  "port": 0,
+  "user": "string",
+  "active": true,
+  "authKey": "",
+  "privKey": "",
+  "sysDescr": "",
+  "sysName": "",
+  "sysUpTime": "",
+  "hrProcessorLoad": "",
+  "memTotalReal": "",
+  "memAvailReal": "",
+  "hrStorageSize": "",
+  "hrStorageUsed": "",
+  "hrStorageDescr": "",
+  "ifOperStatus": "",
+  "ifInOctets": "",
+  "ifOutOctets": ""
+}
+
+
+{
+  "id_end_point": 8,
+  "status": true,
+  "active": true,
+  "sysDescr": null,
+  "sysName": null,
+  "sysUpTime": null,
+  "hrProcessorLoad": null,
+  "memTotalReal": null,
+  "memAvailReal": null,
+  "hrStorageSize": null,
+  "hrStorageUsed": null,
+  "hrStorageDescr": null,
+  "ifOperStatus": null,
+  "ifInOctets": null,
+  "ifOutOctets": null,
+  "ping_rtt": "129.778",
+  "snmp_rtt": "0.0",
+  "last_updated": "2025-09-08T11:20:43.832813"
+}
+
+
+
+{
+  "ip": "1.1.1.1",
+  "interval": 30,
+  "nickname": "",
+  "version": "",
+  "community": "",
+  "port": 0,
+  "active": true,
+  "user": "",
+  "authKey": "",
+  "privKey": "",
+  "sysDescr": "",
+  "sysName": "",
+  "sysUpTime": "",
+  "hrProcessorLoad": "",
+  "memTotalReal": "",
+  "memAvailReal": "",
+  "hrStorageSize": "",
+  "hrStorageUsed": "",
+  "hrStorageDescr": "",
+  "ifOperStatus": "",
+  "ifInOctets": "",
+  "ifOutOctets": ""
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  "monitors": [
+    {
+      "endpoint": "127.0.0.1",
+      "snmp": true,
+      "data": {
+        "id_end_point": 1,
+        "status": true,
+        "active": true,
+        "sysDescr": "Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686",
+        "sysName": "emailserver",
+        "sysUpTime": "116890",
+        "hrProcessorLoad": [
+          {
+            "index": "1",
+            "value": "23"
+          },
+          {
+            "index": "2",
+            "value": "31"
+          }
+        ],
+        "memTotalReal": "8192000",
+        "memAvailReal": "3072000",
+        "hrStorageSize": [
+          {
+            "index": "1",
+            "value": "483244"
+          },
+          {
+            "index": "3",
+            "value": "1466276"
+          },
+          {
+            "index": "6",
+            "value": "483244"
+          },
+          {
+            "index": "7",
+            "value": "114584"
+          },
+          {
+            "index": "10",
+            "value": "983032"
+          },
+          {
+            "index": "31",
+            "value": "9329326"
+          },
+          {
+            "index": "32",
+            "value": "101086"
+          }
+        ],
+        "hrStorageUsed": [
+          {
+            "index": "1",
+            "value": "467084"
+          },
+          {
+            "index": "3",
+            "value": "473964"
+          },
+          {
+            "index": "6",
+            "value": "11440"
+          },
+          {
+            "index": "7",
+            "value": "114584"
+          },
+          {
+            "index": "10",
+            "value": "6880"
+          },
+          {
+            "index": "31",
+            "value": "1828816"
+          },
+          {
+            "index": "32",
+            "value": "9270"
+          }
+        ],
+        "hrStorageDescr": [
+          {
+            "index": "1",
+            "value": "Physical memory"
+          },
+          {
+            "index": "3",
+            "value": "Virtual memory"
+          },
+          {
+            "index": "6",
+            "value": "Memory buffers"
+          },
+          {
+            "index": "7",
+            "value": "Cached memory"
+          },
+          {
+            "index": "10",
+            "value": "Swap space"
+          },
+          {
+            "index": "31",
+            "value": "/"
+          },
+          {
+            "index": "32",
+            "value": "/boot"
+          }
+        ],
+        "ifOperStatus": [
+          {
+            "index": "1",
+            "value": "1"
+          },
+          {
+            "index": "2",
+            "value": "1"
+          },
+          {
+            "index": "3",
+            "value": "2"
+          }
+        ],
+        "ifInOctets": [
+          {
+            "index": "1",
+            "value": "2713706375"
+          },
+          {
+            "index": "2",
+            "value": "10803936"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          }
+        ],
+        "ifOutOctets": [
+          {
+            "index": "1",
+            "value": "2713706375"
+          },
+          {
+            "index": "2",
+            "value": "4189015"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          }
+        ],
+        "ping_rtt": "0.099",
+        "snmp_rtt": "601.6540109994821",
+        "last_updated": "2025-09-08T11:42:48.240965"
+      }
+    },
+    {
+      "endpoint": "127.0.0.2",
+      "snmp": true,
+      "data": {
+        "id_end_point": 2,
+        "status": true,
+        "active": true,
+        "sysDescr": "Hardware: x86 Family 6 Model 94 Stepping 3 AT/AT COMPATIBLE - Software: Windows Version 6.1 (Build 7601 Multiprocessor Free)",
+        "sysName": "WIN-2K1RJV15BNU",
+        "sysUpTime": "116890",
+        "hrProcessorLoad": [
+          {
+            "index": "1",
+            "value": "23"
+          },
+          {
+            "index": "2",
+            "value": "31"
+          }
+        ],
+        "memTotalReal": "8192000",
+        "memAvailReal": "3072000",
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": [
+          {
+            "index": "1",
+            "value": "1"
+          },
+          {
+            "index": "2",
+            "value": "1"
+          },
+          {
+            "index": "3",
+            "value": "1"
+          },
+          {
+            "index": "4",
+            "value": "1"
+          },
+          {
+            "index": "5",
+            "value": "1"
+          },
+          {
+            "index": "6",
+            "value": "1"
+          },
+          {
+            "index": "7",
+            "value": "1"
+          },
+          {
+            "index": "8",
+            "value": "1"
+          },
+          {
+            "index": "9",
+            "value": "6"
+          },
+          {
+            "index": "10",
+            "value": "2"
+          },
+          {
+            "index": "11",
+            "value": "1"
+          },
+          {
+            "index": "12",
+            "value": "2"
+          },
+          {
+            "index": "13",
+            "value": "6"
+          },
+          {
+            "index": "14",
+            "value": "2"
+          },
+          {
+            "index": "15",
+            "value": "2"
+          },
+          {
+            "index": "16",
+            "value": "1"
+          },
+          {
+            "index": "17",
+            "value": "1"
+          },
+          {
+            "index": "18",
+            "value": "1"
+          },
+          {
+            "index": "19",
+            "value": "1"
+          },
+          {
+            "index": "20",
+            "value": "1"
+          }
+        ],
+        "ifInOctets": [
+          {
+            "index": "1",
+            "value": "0"
+          },
+          {
+            "index": "2",
+            "value": "0"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          },
+          {
+            "index": "4",
+            "value": "0"
+          },
+          {
+            "index": "5",
+            "value": "0"
+          },
+          {
+            "index": "6",
+            "value": "0"
+          },
+          {
+            "index": "7",
+            "value": "0"
+          },
+          {
+            "index": "8",
+            "value": "0"
+          },
+          {
+            "index": "9",
+            "value": "0"
+          },
+          {
+            "index": "10",
+            "value": "0"
+          },
+          {
+            "index": "11",
+            "value": "538533"
+          },
+          {
+            "index": "12",
+            "value": "0"
+          },
+          {
+            "index": "13",
+            "value": "0"
+          },
+          {
+            "index": "14",
+            "value": "0"
+          },
+          {
+            "index": "15",
+            "value": "0"
+          },
+          {
+            "index": "16",
+            "value": "538533"
+          },
+          {
+            "index": "17",
+            "value": "538533"
+          },
+          {
+            "index": "18",
+            "value": "0"
+          },
+          {
+            "index": "19",
+            "value": "0"
+          },
+          {
+            "index": "20",
+            "value": "0"
+          }
+        ],
+        "ifOutOctets": [
+          {
+            "index": "1",
+            "value": "0"
+          },
+          {
+            "index": "2",
+            "value": "0"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          },
+          {
+            "index": "4",
+            "value": "0"
+          },
+          {
+            "index": "5",
+            "value": "0"
+          },
+          {
+            "index": "6",
+            "value": "0"
+          },
+          {
+            "index": "7",
+            "value": "0"
+          },
+          {
+            "index": "8",
+            "value": "0"
+          },
+          {
+            "index": "9",
+            "value": "0"
+          },
+          {
+            "index": "10",
+            "value": "0"
+          },
+          {
+            "index": "11",
+            "value": "120908"
+          },
+          {
+            "index": "12",
+            "value": "0"
+          },
+          {
+            "index": "13",
+            "value": "0"
+          },
+          {
+            "index": "14",
+            "value": "0"
+          },
+          {
+            "index": "15",
+            "value": "0"
+          },
+          {
+            "index": "16",
+            "value": "120908"
+          },
+          {
+            "index": "17",
+            "value": "120908"
+          },
+          {
+            "index": "18",
+            "value": "0"
+          },
+          {
+            "index": "19",
+            "value": "0"
+          },
+          {
+            "index": "20",
+            "value": "0"
+          }
+        ],
+        "ping_rtt": "0.028",
+        "snmp_rtt": "604.6566889999667",
+        "last_updated": "2025-09-08T11:42:48.299181"
+      }
+    },
+    {
+      "endpoint": "127.0.0.3",
+      "snmp": true,
+      "data": {
+        "id_end_point": 3,
+        "status": true,
+        "active": true,
+        "sysDescr": "Darwin MacBook-Pro-2.local 19.5.0 Darwin Kernel Version 19.5.0: Tue May 26 20:41:44 PDT 2020; root:xnu-6153.121.2~2/RELEASE_X86_64 x86_64",
+        "sysName": "MacBook-Pro-2.local",
+        "sysUpTime": "116890",
+        "hrProcessorLoad": [
+          {
+            "index": "1",
+            "value": "23"
+          },
+          {
+            "index": "2",
+            "value": "31"
+          }
+        ],
+        "memTotalReal": "8192000",
+        "memAvailReal": "3072000",
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": [
+          {
+            "index": "1",
+            "value": "1"
+          },
+          {
+            "index": "2",
+            "value": "2"
+          },
+          {
+            "index": "3",
+            "value": "2"
+          },
+          {
+            "index": "4",
+            "value": "1"
+          },
+          {
+            "index": "5",
+            "value": "1"
+          },
+          {
+            "index": "6",
+            "value": "1"
+          },
+          {
+            "index": "7",
+            "value": "1"
+          },
+          {
+            "index": "8",
+            "value": "1"
+          },
+          {
+            "index": "9",
+            "value": "1"
+          },
+          {
+            "index": "10",
+            "value": "1"
+          },
+          {
+            "index": "11",
+            "value": "1"
+          },
+          {
+            "index": "12",
+            "value": "1"
+          },
+          {
+            "index": "13",
+            "value": "1"
+          },
+          {
+            "index": "14",
+            "value": "1"
+          },
+          {
+            "index": "15",
+            "value": "1"
+          },
+          {
+            "index": "16",
+            "value": "1"
+          },
+          {
+            "index": "17",
+            "value": "1"
+          },
+          {
+            "index": "19",
+            "value": "1"
+          },
+          {
+            "index": "20",
+            "value": "1"
+          }
+        ],
+        "ifInOctets": [
+          {
+            "index": "1",
+            "value": "509419676"
+          },
+          {
+            "index": "2",
+            "value": "0"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          },
+          {
+            "index": "4",
+            "value": "73801"
+          },
+          {
+            "index": "5",
+            "value": "913214228"
+          },
+          {
+            "index": "6",
+            "value": "0"
+          },
+          {
+            "index": "7",
+            "value": "1337515"
+          },
+          {
+            "index": "8",
+            "value": "0"
+          },
+          {
+            "index": "9",
+            "value": "0"
+          },
+          {
+            "index": "10",
+            "value": "0"
+          },
+          {
+            "index": "11",
+            "value": "0"
+          },
+          {
+            "index": "12",
+            "value": "0"
+          },
+          {
+            "index": "13",
+            "value": "0"
+          },
+          {
+            "index": "14",
+            "value": "0"
+          },
+          {
+            "index": "15",
+            "value": "0"
+          },
+          {
+            "index": "16",
+            "value": "28"
+          },
+          {
+            "index": "17",
+            "value": "28"
+          },
+          {
+            "index": "19",
+            "value": "9488"
+          },
+          {
+            "index": "20",
+            "value": "0"
+          }
+        ],
+        "ifOutOctets": [
+          {
+            "index": "1",
+            "value": "509419676"
+          },
+          {
+            "index": "2",
+            "value": "0"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          },
+          {
+            "index": "4",
+            "value": "27119"
+          },
+          {
+            "index": "5",
+            "value": "4095463215"
+          },
+          {
+            "index": "6",
+            "value": "0"
+          },
+          {
+            "index": "7",
+            "value": "367760"
+          },
+          {
+            "index": "8",
+            "value": "0"
+          },
+          {
+            "index": "9",
+            "value": "0"
+          },
+          {
+            "index": "10",
+            "value": "0"
+          },
+          {
+            "index": "11",
+            "value": "0"
+          },
+          {
+            "index": "12",
+            "value": "0"
+          },
+          {
+            "index": "13",
+            "value": "0"
+          },
+          {
+            "index": "14",
+            "value": "200"
+          },
+          {
+            "index": "15",
+            "value": "200"
+          },
+          {
+            "index": "16",
+            "value": "0"
+          },
+          {
+            "index": "17",
+            "value": "0"
+          },
+          {
+            "index": "19",
+            "value": "11436"
+          },
+          {
+            "index": "20",
+            "value": "200"
+          }
+        ],
+        "ping_rtt": "0.018",
+        "snmp_rtt": "566.7048209943459",
+        "last_updated": "2025-09-08T11:42:48.296622"
+      }
+    },
+    {
+      "endpoint": "192.168.8.146",
+      "snmp": true,
+      "data": {
+        "id_end_point": 5,
+        "status": false,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": null,
+        "snmp_rtt": null,
+        "last_updated": "2025-09-08T11:43:00.098597"
+      }
+    },
+    {
+      "endpoint": "127.0.0.4",
+      "snmp": true,
+      "data": {
+        "id_end_point": 6,
+        "status": true,
+        "active": true,
+        "sysDescr": "Hardware: Intel64 Family 6 Model 142 Stepping 9 AT/AT COMPATIBLE - Software: Windows Version 6.3 (Build 18363 Multiprocessor Free)",
+        "sysName": "DESKTOP-O54K52B",
+        "sysUpTime": "116890",
+        "hrProcessorLoad": [
+          {
+            "index": "1",
+            "value": "23"
+          },
+          {
+            "index": "2",
+            "value": "31"
+          }
+        ],
+        "memTotalReal": "8192000",
+        "memAvailReal": "3072000",
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": [
+          {
+            "index": "1",
+            "value": "1"
+          },
+          {
+            "index": "2",
+            "value": "6"
+          },
+          {
+            "index": "3",
+            "value": "6"
+          },
+          {
+            "index": "4",
+            "value": "1"
+          },
+          {
+            "index": "5",
+            "value": "1"
+          },
+          {
+            "index": "6",
+            "value": "6"
+          },
+          {
+            "index": "7",
+            "value": "1"
+          },
+          {
+            "index": "8",
+            "value": "2"
+          },
+          {
+            "index": "9",
+            "value": "1"
+          },
+          {
+            "index": "10",
+            "value": "2"
+          },
+          {
+            "index": "11",
+            "value": "2"
+          },
+          {
+            "index": "12",
+            "value": "2"
+          },
+          {
+            "index": "13",
+            "value": "6"
+          },
+          {
+            "index": "14",
+            "value": "2"
+          },
+          {
+            "index": "15",
+            "value": "2"
+          },
+          {
+            "index": "16",
+            "value": "2"
+          },
+          {
+            "index": "17",
+            "value": "2"
+          },
+          {
+            "index": "18",
+            "value": "1"
+          },
+          {
+            "index": "19",
+            "value": "1"
+          },
+          {
+            "index": "20",
+            "value": "1"
+          },
+          {
+            "index": "21",
+            "value": "1"
+          },
+          {
+            "index": "22",
+            "value": "1"
+          },
+          {
+            "index": "23",
+            "value": "1"
+          },
+          {
+            "index": "24",
+            "value": "1"
+          },
+          {
+            "index": "25",
+            "value": "1"
+          },
+          {
+            "index": "26",
+            "value": "1"
+          },
+          {
+            "index": "27",
+            "value": "1"
+          },
+          {
+            "index": "28",
+            "value": "1"
+          },
+          {
+            "index": "29",
+            "value": "2"
+          },
+          {
+            "index": "30",
+            "value": "2"
+          },
+          {
+            "index": "31",
+            "value": "2"
+          },
+          {
+            "index": "32",
+            "value": "2"
+          },
+          {
+            "index": "33",
+            "value": "2"
+          },
+          {
+            "index": "34",
+            "value": "2"
+          },
+          {
+            "index": "35",
+            "value": "2"
+          },
+          {
+            "index": "36",
+            "value": "2"
+          }
+        ],
+        "ifInOctets": [
+          {
+            "index": "1",
+            "value": "0"
+          },
+          {
+            "index": "2",
+            "value": "0"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          },
+          {
+            "index": "4",
+            "value": "53266424"
+          },
+          {
+            "index": "5",
+            "value": "0"
+          },
+          {
+            "index": "6",
+            "value": "0"
+          },
+          {
+            "index": "7",
+            "value": "0"
+          },
+          {
+            "index": "8",
+            "value": "0"
+          },
+          {
+            "index": "9",
+            "value": "0"
+          },
+          {
+            "index": "10",
+            "value": "0"
+          },
+          {
+            "index": "11",
+            "value": "0"
+          },
+          {
+            "index": "12",
+            "value": "0"
+          },
+          {
+            "index": "13",
+            "value": "0"
+          },
+          {
+            "index": "14",
+            "value": "0"
+          },
+          {
+            "index": "15",
+            "value": "0"
+          },
+          {
+            "index": "16",
+            "value": "0"
+          },
+          {
+            "index": "17",
+            "value": "0"
+          },
+          {
+            "index": "18",
+            "value": "53266424"
+          },
+          {
+            "index": "19",
+            "value": "53266424"
+          },
+          {
+            "index": "20",
+            "value": "53266424"
+          },
+          {
+            "index": "21",
+            "value": "53266424"
+          },
+          {
+            "index": "22",
+            "value": "53266424"
+          },
+          {
+            "index": "23",
+            "value": "0"
+          },
+          {
+            "index": "24",
+            "value": "0"
+          },
+          {
+            "index": "25",
+            "value": "0"
+          },
+          {
+            "index": "26",
+            "value": "0"
+          },
+          {
+            "index": "27",
+            "value": "0"
+          },
+          {
+            "index": "28",
+            "value": "0"
+          },
+          {
+            "index": "29",
+            "value": "0"
+          },
+          {
+            "index": "30",
+            "value": "0"
+          },
+          {
+            "index": "31",
+            "value": "0"
+          },
+          {
+            "index": "32",
+            "value": "0"
+          },
+          {
+            "index": "33",
+            "value": "0"
+          },
+          {
+            "index": "34",
+            "value": "0"
+          },
+          {
+            "index": "35",
+            "value": "0"
+          },
+          {
+            "index": "36",
+            "value": "0"
+          }
+        ],
+        "ifOutOctets": [
+          {
+            "index": "1",
+            "value": "0"
+          },
+          {
+            "index": "2",
+            "value": "0"
+          },
+          {
+            "index": "3",
+            "value": "0"
+          },
+          {
+            "index": "4",
+            "value": "2979400"
+          },
+          {
+            "index": "5",
+            "value": "0"
+          },
+          {
+            "index": "6",
+            "value": "0"
+          },
+          {
+            "index": "7",
+            "value": "0"
+          },
+          {
+            "index": "8",
+            "value": "0"
+          },
+          {
+            "index": "9",
+            "value": "0"
+          },
+          {
+            "index": "10",
+            "value": "0"
+          },
+          {
+            "index": "11",
+            "value": "0"
+          },
+          {
+            "index": "12",
+            "value": "0"
+          },
+          {
+            "index": "13",
+            "value": "0"
+          },
+          {
+            "index": "14",
+            "value": "0"
+          },
+          {
+            "index": "15",
+            "value": "0"
+          },
+          {
+            "index": "16",
+            "value": "0"
+          },
+          {
+            "index": "17",
+            "value": "0"
+          },
+          {
+            "index": "18",
+            "value": "2979400"
+          },
+          {
+            "index": "19",
+            "value": "2979400"
+          },
+          {
+            "index": "20",
+            "value": "2979400"
+          },
+          {
+            "index": "21",
+            "value": "2979400"
+          },
+          {
+            "index": "22",
+            "value": "2979400"
+          },
+          {
+            "index": "23",
+            "value": "0"
+          },
+          {
+            "index": "24",
+            "value": "0"
+          },
+          {
+            "index": "25",
+            "value": "0"
+          },
+          {
+            "index": "26",
+            "value": "0"
+          },
+          {
+            "index": "27",
+            "value": "0"
+          },
+          {
+            "index": "28",
+            "value": "0"
+          },
+          {
+            "index": "29",
+            "value": "0"
+          },
+          {
+            "index": "30",
+            "value": "0"
+          },
+          {
+            "index": "31",
+            "value": "0"
+          },
+          {
+            "index": "32",
+            "value": "0"
+          },
+          {
+            "index": "33",
+            "value": "0"
+          },
+          {
+            "index": "34",
+            "value": "0"
+          },
+          {
+            "index": "35",
+            "value": "0"
+          },
+          {
+            "index": "36",
+            "value": "0"
+          }
+        ],
+        "ping_rtt": "0.018",
+        "snmp_rtt": "560.9344080003211",
+        "last_updated": "2025-09-08T11:42:48.330489"
+      }
+    },
+    {
+      "endpoint": "127.0.0.5",
+      "snmp": true,
+      "data": {
+        "id_end_point": 7,
+        "status": false,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "284.6284910046961",
+        "snmp_rtt": "0.0",
+        "last_updated": "2025-09-08T11:42:48.132011"
+      }
+    },
+    {
+      "endpoint": "8.8.8.8",
+      "snmp": true,
+      "data": {
+        "id_end_point": 8,
+        "status": true,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "129.778",
+        "snmp_rtt": "0.0",
+        "last_updated": "2025-09-08T11:42:48.299202"
+      }
+    },
+    {
+      "endpoint": "dgg.gg",
+      "snmp": true,
+      "data": {
+        "id_end_point": 9,
+        "status": true,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "225.42193299887003",
+        "snmp_rtt": "0.0",
+        "last_updated": "2025-09-08T11:42:48.490334"
+      }
+    },
+    {
+      "endpoint": "127.0.0.11",
+      "snmp": true,
+      "data": {
+        "id_end_point": 10,
+        "status": true,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "0.138",
+        "snmp_rtt": "60038.04761899664",
+        "last_updated": "2025-09-08T11:43:48.091113"
+      }
+    },
+    {
+      "endpoint": "127.0.0.12",
+      "snmp": true,
+      "data": {
+        "id_end_point": 11,
+        "status": true,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "0.153",
+        "snmp_rtt": "60041.333811001095",
+        "last_updated": "2025-09-08T11:43:48.093762"
+      }
+    },
+    {
+      "endpoint": "127.0.0.13",
+      "snmp": true,
+      "data": {
+        "id_end_point": 12,
+        "status": false,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "209.3596409977181",
+        "snmp_rtt": "0.0",
+        "last_updated": "2025-09-08T11:42:48.132021"
+      }
+    },
+    {
+      "endpoint": "192.168.0.3",
+      "snmp": true,
+      "data": {
+        "id_end_point": 13,
+        "status": false,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "11568.681866003317",
+        "snmp_rtt": "0.0",
+        "last_updated": "2025-09-08T11:43:00.112430"
+      }
+    },
+    {
+      "endpoint": "1.1.1.1",
+      "snmp": true,
+      "data": {
+        "id_end_point": 14,
+        "status": true,
+        "active": true,
+        "sysDescr": null,
+        "sysName": null,
+        "sysUpTime": null,
+        "hrProcessorLoad": null,
+        "memTotalReal": null,
+        "memAvailReal": null,
+        "hrStorageSize": null,
+        "hrStorageUsed": null,
+        "hrStorageDescr": null,
+        "ifOperStatus": null,
+        "ifInOctets": null,
+        "ifOutOctets": null,
+        "ping_rtt": "34.378875003312714",
+        "snmp_rtt": "0.0",
+        "last_updated": "2025-09-08T11:41:47.859450"
+      }
+    }
+  ],
+  "total": 13,
+  "total_online": 9,
+  "total_offline": 4,
+  "total_depravado": 5
+}

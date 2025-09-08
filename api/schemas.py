@@ -46,7 +46,7 @@ class EndPointsDataSchemas(BaseModel):
     """
     id_end_point: int
     status: bool
-    active: Optional[bool] = True
+    active: bool
     sysDescr: Optional[str]
     sysName: Optional[str]
     sysUpTime: Optional[str]
