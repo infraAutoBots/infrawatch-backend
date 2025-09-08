@@ -3,8 +3,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from jose import jwt, JWTError
 from typing import Generator
 from datetime import datetime, timezone
-from models import db, Users
-from encryption import SECRET_KEY, ALGORITHM, oauth2_schema
+from .models import db, Users
+from .encryption import SECRET_KEY, ALGORITHM, oauth2_schema
 
 
 

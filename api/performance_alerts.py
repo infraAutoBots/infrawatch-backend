@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'api'))
 
 from sqlalchemy.orm import Session
-from models import PerformanceThresholds
+from .models import PerformanceThresholds
 
 
 def parse_snmp_list_data(data) -> List[Dict[str, str]]:

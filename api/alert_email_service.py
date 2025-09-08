@@ -3,8 +3,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import List, Optional
-from models import EmailConfig, Users
-from dependencies import init_session_monitor
+from .models import EmailConfig, Users
+from .dependencies import init_session_monitor
 import logging
 
 

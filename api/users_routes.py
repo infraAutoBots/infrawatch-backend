@@ -5,10 +5,10 @@ from typing import Optional
 from math import ceil
 from datetime import datetime
 
-from models import Users
-from dependencies import init_session, verify_token
-from encryption import bcrypt_context
-from schemas import (
+from .models import Users
+from .dependencies import init_session, verify_token
+from .encryption import bcrypt_context
+from .schemas import (
     UserResponseSchemas, 
     UserCreateSchemas, 
     UserUpdateSchemas, 

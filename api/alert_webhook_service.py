@@ -2,9 +2,9 @@ import requests
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 import logging
-from dependencies import init_session_monitor
+from .dependencies import init_session_monitor
 from sqlalchemy.orm import Session
-from models import WebHookConfig
+from .models import WebHookConfig
 
 
 

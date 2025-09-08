@@ -13,20 +13,20 @@ from typing import Dict, List, Optional, Tuple
 from pysnmp.hlapi.v3arch.asyncio import (get_cmd, UdpTransportTarget, next_cmd,
                                          ContextData, ObjectType, ObjectIdentity)
 
-from utils_monitor import (HostStatus, print_logs, get_HostStatus,
+from .utils_monitor import (HostStatus, print_logs, get_HostStatus,
                    check_ip_for_snmp, select_snmp_authentication, is_snmp_data_valid)
-from alert_email_service import EmailService
-from alert_webhook_service import WebhookService
-from dependencies import init_session_monitor
+from .alert_email_service import EmailService
+from .alert_webhook_service import WebhookService
+from .dependencies import init_session_monitor
 
 # Configurações padrão
 DEFAULT_SYSTEM_USER_ID = 8  # ID do usuário admin para alertas do sistema
-from snmp_engine_pool import SNMPEnginePool, logger
-from performance_alerts import (should_alert_cpu, should_alert_memory, 
+from .snmp_engine_pool import SNMPEnginePool, logger
+from .performance_alerts import (should_alert_cpu, should_alert_memory, 
                                should_alert_storage, should_alert_network,
                                initialize_default_thresholds)
 
-from models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig, SLAMetrics, IncidentTracking, PerformanceMetrics
+from .models import EndPoints, EndPointsData, Alerts, AlertLogs, FailureThresholdConfig, SLAMetrics, IncidentTracking, PerformanceMetrics
 
 import asyncio
 import os

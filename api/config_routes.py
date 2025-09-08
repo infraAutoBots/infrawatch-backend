@@ -4,10 +4,10 @@ from sqlalchemy import func
 from typing import Optional, List
 from datetime import datetime
 
-from models import Users, WebHookConfig, EmailConfig, FailureThresholdConfig, PerformanceThresholds
-from dependencies import init_session, verify_token
-from encryption import bcrypt_context
-from schemas import (
+from .models import Users, WebHookConfig, EmailConfig, FailureThresholdConfig, PerformanceThresholds
+from .dependencies import init_session, verify_token
+from .encryption import bcrypt_context
+from .schemas import (
     WebHookConfigSchema,
     WebHookConfigResponse,
     WebHookConfigUpdate,

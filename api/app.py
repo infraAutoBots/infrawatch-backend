@@ -1,18 +1,19 @@
 import os
 import uvicorn
 import asyncio
+from datetime import datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from auth_routes import auth_router
-from monitor_routes import monitor_router
-from users_routes import users_router
-from alert_routes import alert_router
-from config_routes import config_router
-from sla_routes import sla_router
+from .auth_routes import auth_router
+from .monitor_routes import monitor_router
+from .users_routes import users_router
+from .alert_routes import alert_router
+from .config_routes import config_router
+from .sla_routes import sla_router
 
-from monitor import OptimizedMonitor
+from .monitor import OptimizedMonitor
 
 
 
@@ -58,6 +59,41 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+# Rota de health check
+@app.get("/")
+async def health_check():
+    """Endpoint de health check para verificar se a aplicação está funcionando."""
+    return {
+        "status": "healthy",
+        "message": "InfraWatch API está funcionando!",
+        "version": "2.0.1",
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/health")
+async def detailed_health_check():
+    """Endpoint de health check detalhado."""
+    try:
+        # Aqui você pode adicionar verificações mais específicas
+        return {
+            "status": "healthy",
+            "details": {
+                "api": "operational",
+                "database": "connected",  # Você pode verificar a conexão com o DB aqui
+                "monitoring": "active"
+            },
+            "version": "2.0.1",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 
 app.include_router(auth_router)

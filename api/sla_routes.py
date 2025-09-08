@@ -4,8 +4,8 @@ from sqlalchemy import and_, func, desc
 from datetime import datetime, timedelta
 from typing import Optional
 
-from dependencies import verify_token, init_session
-from models import (SLAMetrics, IncidentTracking, PerformanceMetrics,
+from .dependencies import verify_token, init_session
+from .models import (SLAMetrics, IncidentTracking, PerformanceMetrics,
                     EndPoints, EndPointsData, Alerts)
 
 
