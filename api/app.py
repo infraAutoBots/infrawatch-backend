@@ -12,6 +12,7 @@ from monitor_routes import monitor_router
 from users_routes import users_router
 from alert_routes import alert_router
 from config_routes import config_router
+from sla_routes import sla_router
 
 
 
@@ -37,6 +38,7 @@ app.include_router(monitor_router)
 app.include_router(users_router)
 app.include_router(alert_router)
 app.include_router(config_router)
+app.include_router(sla_router)
 
 
 if __name__ == "__main__":
