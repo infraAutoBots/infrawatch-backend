@@ -1,0 +1,149 @@
+{
+  "curl": "http://127.0.0.1:8000/counter"
+}
+{
+ "192.168.8.159":{"status":false,
+                  "data":{
+                    "error":"Host não está ativo"
+                    },
+                  "last_updated":"2025-08-18T10:35:30.589197"},
+
+ "192.168.8.146":{"status":false,
+                  "data":{
+                    "error":"Host não está ativo"
+                    },
+                  "last_updated":"2025-08-18T10:36:55.305818"},
+
+ "192.168.8.121":{"status":true,
+                  "data":{
+                    "sysDescr":null,
+                    "cpu":null,
+                    "disk":null,
+                    "uptime":null,
+                    "storage":null
+                    },
+                  "last_updated":"2025-08-18T10:39:41.400614"},
+
+ "127.0.0.1":{"status":true,
+              "data":{
+                "sysDescr":null,
+                "cpu":null,
+                "disk":null,
+                "uptime":null,
+                "storage":null
+                },
+              "last_updated":"2025-08-18T10:42:27.221216"}
+}
+# output do status
+{
+    "192.168.8.159":{
+        "status":false,
+        "data":{"error":"Host não está ativo"},
+        "last_updated":"2025-08-18T11:26:11.784644"
+        },
+    "192.168.8.146":{
+        "status":false,
+        "data":{"error":"Host não está ativo"},
+        "last_updated":"2025-08-18T11:27:37.703121"},
+    "192.168.8.121":{
+        "status":true,
+        "snmp": true,
+        "data":{
+            "sysDescr":null,
+            "cpu":null,
+            "disk":null,
+            "uptime":null,
+            "storage":null},
+        "webhook": true,
+        "last_updated":"2025-08-18T11:30:23.662497"},
+    "127.0.0.1":{
+        "status":true,
+        "data":{
+            "sysDescr":"Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686",
+            "cpu":"",
+            "disk":"",
+            "uptime":"42009",
+            "storage":""},
+            "last_updated":"2025-08-18T11:30:26.325523"}
+}
+
+
+
+# USUARIO
+{
+  "nome": "Daniel",
+  "email": "daniel@example.com",
+  "senha": "senha123",
+  "estado": ["ativo", "Inativo"],
+  "ultima vez que fez login": "2025-08-18T10:42:27.221216",
+  "Nivel de acesso": ["admin", "monitor", "user"]
+}
+
+# DEVICE
+{
+  "ip": "192.168.8.159",
+  "version": "2c",
+  "community": "public",
+  "port": 161,
+  "user": "admin",
+  "authKey": "authKey",
+  "privKey": "privKey",
+  "webhook": true
+}
+
+# DEVICE so check sem snmp
+{
+  "ip": "192.168.8.159",
+  "version": "",
+  "community": "",
+  "port": ,
+  "user": "",
+  "authKey": "",
+  "privKey": "",
+  "webhook": false
+}
+
+# Device com SNMP
+{
+  "ip": "192.168.8.159",
+  "version": "2c",
+  "community": "public",
+  "port": 161,
+  "user": "admin",
+  "authKey": "authKey",
+  "privKey": "privKey",
+  "webhook": true
+}
+
+# device data
+"127.0.0.1":{
+"status":true,
+"data":{
+    "sysDescr":"Linux emailserver 2.6.9-42.EL #1 Sat Aug 12 09:17:58 CDT 2006 i686",
+    "cpu":"",
+    "disk":"",
+    "uptime":"42009",
+    "storage":""},
+    "last_updated":"2025-08-18T11:30:26.325523"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"192.168.8.121": {"status": true,
+    "snmp": true,
+    "data": {"sysDescr":null,"cpu":null,"disk":null,"uptime":null,"storage":null},
+    "webhook": true,
+    "last_updated":"2025-08-18T11:30:23.662497"},
+
+    "webhook": true,
+    "last_updated":"2025-08-18T11:30:23.662497"},
