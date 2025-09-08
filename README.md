@@ -45,7 +45,94 @@ pip install -r requirements.txt
 
 Edite o arquivo `.env` (ou `config.py`, caso exista) para configurar variáveis de ambiente como conexão ao banco de dados, portas, etc. Consulte os exemplos fornecidos no repositório.
 
+## Configuração do PostgreSQL
+
+**IMPORTANTE:** Antes de executar a API, certifique-se de que o PostgreSQL esteja instalado e funcionando.
+
+### 1. Verificar se o PostgreSQL está rodando
+
+```bash
+sudo systemctl status postgresql
+```
+
+### 2. Iniciar o PostgreSQL (caso não esteja rodando)
+
+```bash
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+### 3. Verificar se o banco e usuário existem
+
+```bash
+# Conectar como superusuário
+sudo -u postgres psql
+
+# Listar bancos de dados
+\l
+
+# Listar usuários
+\du
+
+# Sair do PostgreSQL
+\q
+```
+
+### 4. Criar banco e usuário (se necessário)
+
+```bash
+# Conectar como postgres
+sudo -u postgres psql
+
+# Criar banco de dados
+CREATE DATABASE infrawatch_db;
+
+# Criar usuário
+CREATE USER infrawatch WITH PASSWORD 'sua_senha_aqui';
+
+# Dar permissões ao usuário
+GRANT ALL PRIVILEGES ON DATABASE infrawatch_db TO infrawatch;
+
+# Sair
+\q
+```
+
+### 5. Testar conexão
+
+```bash
+# Testar se consegue conectar com o usuário criado
+psql -h localhost -U infrawatch -d infrawatch_db -c "SELECT current_user, current_database();"
+```
+
+### 6. Resolver problemas de autenticação (se necessário)
+
+Se ocorrer erro de autenticação, edite o arquivo de configuração:
+
+```bash
+# Editar configuração de autenticação
+sudo nano /etc/postgresql/*/main/pg_hba.conf
+
+# Alterar 'peer' para 'md5' nas linhas:
+local   all             all                                     md5
+host    all             all             127.0.0.1/32            md5
+
+# Reiniciar PostgreSQL
+sudo systemctl restart postgresql
+```
+
+### 7. Verificação rápida antes de executar a API
+
+```bash
+# Comando rápido para verificar se tudo está funcionando
+sudo systemctl status postgresql && echo "✅ PostgreSQL está rodando"
+
+# Verificar se consegue conectar (irá pedir senha)
+psql -h localhost -U infrawatch -d infrawatch_db -c "SELECT 'Conexão OK' as status;"
+```
+
 ## Como rodar a API
+
+**⚠️ ATENÇÃO:** Antes de executar a API, certifique-se de que o PostgreSQL esteja rodando e configurado conforme a seção anterior.
 
 Para iniciar a API, utilize o comando:
 
