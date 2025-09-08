@@ -23,7 +23,8 @@ from schemas import (
 )
 
 
-config_router = APIRouter(prefix="/config", tags=["config"])
+
+config_router = APIRouter(prefix="/config", tags=["config"], dependencies=[Depends(verify_token)])
 
 
 def check_admin_permission(user: Users):
