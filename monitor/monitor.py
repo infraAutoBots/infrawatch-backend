@@ -551,31 +551,214 @@ class OptimizedMonitor:
             return {ip: (False, 0.0) for ip in ips}
 
     async def fast_tcp_check(self, endpoint: str):
-        async def check_port_first(port):
+        """
+        Verificação TCP ultra-rápida e robusta. 
+        Otimizada para velocidade com timeouts agressivos e verificação paralela.
+        """
+        if self.logger:
+            logger.debug(f"Fast TCP check iniciado para {endpoint}")
+        
+        # Fase 1: Verificação paralela rápida (HTTP + Portas principais)
+        http_task = asyncio.create_task(self._quick_http_check(endpoint))
+        tcp_task = asyncio.create_task(self._quick_tcp_check(endpoint))
+        
+        try:
+            # Aguarda a primeira resposta positiva ou ambas falharem
+            done, pending = await asyncio.wait(
+                [http_task, tcp_task], 
+                return_when=asyncio.FIRST_COMPLETED, 
+                timeout=4.0  # Timeout total agressivo
+            )
+            
+            # Cancela tasks pendentes
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+            
+            # Verifica se alguma teve sucesso
+            for task in done:
+                try:
+                    result = await task
+                    if result:
+                        if self.logger:
+                            logger.debug(f"Fast TCP check {endpoint}: SUCCESS (fase 1)")
+                        return True
+                except Exception:
+                    pass
+            
+        except asyncio.TimeoutError:
+            # Cancela todas se timeout geral
+            for task in [http_task, tcp_task]:
+                if not task.done():
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+        
+        # Fase 2: Fallback robusto apenas se fase 1 falhou
+        if await self._robust_fallback_check(endpoint):
+            if self.logger:
+                logger.debug(f"Fast TCP check {endpoint}: SUCCESS (fase 2 - fallback)")
+            return True
+        
+        if self.logger:
+            logger.debug(f"Fast TCP check {endpoint}: FAILED")
+        return False
+    
+    async def _quick_http_check(self, endpoint: str):
+        """Verificação HTTP/HTTPS ultra-rápida"""
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        # Testa HTTPS e HTTP em paralelo
+        async def test_protocol(protocol):
+            try:
+                connector = aiohttp.TCPConnector(ssl=ssl_context if protocol == "https" else None)
+                timeout = aiohttp.ClientTimeout(total=3, connect=1.5)
+                
+                async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+                    async with session.get(f"{protocol}://{endpoint}/", allow_redirects=True) as resp:
+                        return resp.status < 500
+            except:
+                return False
+        
+        # Executa HTTPS e HTTP em paralelo
+        https_task = asyncio.create_task(test_protocol("https"))
+        http_task = asyncio.create_task(test_protocol("http"))
+        
+        try:
+            done, pending = await asyncio.wait(
+                [https_task, http_task], 
+                return_when=asyncio.FIRST_COMPLETED,
+                timeout=3.5
+            )
+            
+            # Cancela pendentes
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+            
+            # Retorna se alguma teve sucesso
+            for task in done:
+                try:
+                    if await task:
+                        return True
+                except:
+                    pass
+        except asyncio.TimeoutError:
+            # Cancela em caso de timeout
+            for task in [https_task, http_task]:
+                if not task.done():
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+        
+        return False
+    
+    async def _quick_tcp_check(self, endpoint: str):
+        """Verificação de portas TCP rápida"""
+        priority_ports = [443, 80]  # Apenas as 2 mais importantes para velocidade
+        
+        async def test_port(port):
             try:
                 _, writer = await asyncio.wait_for(
-                    asyncio.open_connection(endpoint, port), 1)
+                    asyncio.open_connection(endpoint, port), timeout=2)
                 writer.close()
                 await writer.wait_closed()
                 return True
-            except Exception:
+            except:
                 return False
-
-        # Teste HTTP/HTTPS real (sequencial, retorna no primeiro sucesso)
-        paths = ["/"]
-        for path in paths:
-            for url in [f"http://{endpoint}{path}", f"https://{endpoint}{path}"]:
+        
+        # Testa as 2 portas em paralelo
+        tasks = [asyncio.create_task(test_port(port)) for port in priority_ports]
+        
+        try:
+            done, pending = await asyncio.wait(
+                tasks, 
+                return_when=asyncio.FIRST_COMPLETED,
+                timeout=2.5
+            )
+            
+            # Cancela pendentes
+            for task in pending:
+                task.cancel()
                 try:
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(url, timeout=1, allow_redirects=True) as resp:
-                            if resp.status < 500:
-                                return True
-                except Exception:
-                    continue
-
-        tasks = [asyncio.create_task(check_port_first(port)) for port in self.tcp_ports]
-        results = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        return any(r is True for r in results)
+                    await task
+                except asyncio.CancelledError:
+                    pass
+            
+            # Retorna se alguma teve sucesso
+            for task in done:
+                try:
+                    if await task:
+                        return True
+                except:
+                    pass
+        except asyncio.TimeoutError:
+            # Cancela em caso de timeout
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+        
+        return False
+    
+    async def _robust_fallback_check(self, endpoint: str):
+        """Fallback robusto para casos difíceis (ex: dgg.gg)"""
+        import ssl
+        
+        # Configurações mais robustas mas ainda rápidas
+        protocols = [
+            ("https", 6),  # HTTPS com timeout maior
+            ("http", 5),   # HTTP com timeout médio
+        ]
+        
+        for protocol, timeout_val in protocols:
+            try:
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
+                connector = aiohttp.TCPConnector(ssl=ssl_context if protocol == "https" else None)
+                timeout = aiohttp.ClientTimeout(total=timeout_val, connect=timeout_val//2)
+                
+                async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+                    # Tenta GET e HEAD em sequência rápida
+                    for method in ['GET', 'HEAD']:
+                        try:
+                            request_method = session.get if method == 'GET' else session.head
+                            async with request_method(
+                                f"{protocol}://{endpoint}/",
+                                allow_redirects=True,
+                                headers={'User-Agent': 'InfraWatch/1.0'}
+                            ) as resp:
+                                if resp.status < 500:
+                                    if self.logger:
+                                        logger.debug(f"Fallback {endpoint}: {protocol.upper()} {method} {resp.status} - SUCCESS")
+                                    return True
+                        except asyncio.TimeoutError:
+                            continue  # Tenta próximo método
+                        except Exception:
+                            break  # Protocolo não funciona, tenta próximo
+                            
+            except Exception:
+                continue  # Tenta próximo protocolo
+        
+        return False
 
     async def fast_snmp_check_with_retry(self, ip: str, max_retries: int = 3):
         """SNMP check com retry e renovação de engine"""
@@ -744,24 +927,26 @@ class OptimizedMonitor:
         ip = host_status.ip
 
         # Ping check
-        ping_results = await self.fast_ping_check([ip])
-        is_alive_ping, rtt = ping_results.get(ip, (False, 0.0))
-
         snmp_data = None
-        is_alive = is_alive_ping  # Valor inicial baseado no ping
-        
-        if is_alive_ping and check_ip_for_snmp(self.hosts_status[ip]):
+        ping_results = await self.fast_ping_check([ip])
+        is_alive, rtt = ping_results.get(ip, (False, 0.0))
+
+        if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
             # Tenta SNMP com retry
             snmp_data = await self.fast_snmp_check_with_retry(ip)
         else:
             # Fallback TCP
-            tcp_alive = await self.fast_tcp_check(ip)
-            if tcp_alive and check_ip_for_snmp(self.hosts_status[ip]):
-                is_alive = True
+            # Iniciar medição do tempo total
+            ip_start_time = time.perf_counter()
+            is_alive = await self.fast_tcp_check(ip)
+            rtt = (time.perf_counter() - ip_start_time) * 1000
+            if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
                 snmp_data = await self.fast_snmp_check_with_retry(ip)
 
+        print(f"{ip}: {is_alive}")
+
         # CORREÇÃO: Atualiza contadores de ping baseado APENAS no resultado do ping inicial
-        if is_alive_ping:
+        if is_alive:
             self.hosts_status[ip].consecutive_ping_failures = 0
         elif self.hosts_status[ip].consecutive_ping_failures < self.max_consecutive_ping_failures + 1:
             self.hosts_status[ip].consecutive_ping_failures += 1

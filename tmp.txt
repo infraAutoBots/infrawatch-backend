@@ -603,3 +603,8 @@ Walk OID: 1.3.6.1.2.1.25.3.2.1.1.768 Value: 768
 
 nalizeo meu nomitoramento nao esta a consegui resolver o falso negativo do dgg.gg como me ajudarias a resolve isso
 
+
+
+
+
+
