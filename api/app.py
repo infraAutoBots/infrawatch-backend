@@ -21,26 +21,33 @@ from .monitor import OptimizedMonitor
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Código executado ANTES da API iniciar
-    print("⚡ Modo OTIMIZADO ativado!")
-    print("🚀 Inicializando monitoramento...")
+    print("⚡ Iniciando InfraWatch API...")
     
-    # Inicializar o monitor
-    monitor = OptimizedMonitor(logger=False)
-
-    # Criar uma task em background para o monitoramento
-    monitoring_task = asyncio.create_task(monitor.run_monitoring(interval=30.0))
-    
-    print("✅ Monitoramento iniciado em background!")
+    monitoring_task = None
+    try:
+        print("🚀 Tentando inicializar monitoramento...")
+        # Inicializar o monitor de forma segura
+        monitor = OptimizedMonitor(logger=False)
+        
+        # Criar uma task em background para o monitoramento
+        monitoring_task = asyncio.create_task(monitor.run_monitoring(interval=30.0))
+        print("✅ Monitoramento iniciado em background!")
+        
+    except Exception as e:
+        print(f"⚠️ Não foi possível inicializar o monitoramento: {e}")
+        print("📡 API funcionando sem monitoramento automático")
     
     yield  # A API roda aqui
     
     # Código executado APÓS a API encerrar
-    print("🔄 Encerrando monitoramento...")
-    monitoring_task.cancel()
-    try:
-        await monitoring_task
-    except asyncio.CancelledError:
-        print("✅ Monitoramento encerrado com sucesso!")
+    if monitoring_task:
+        print("🔄 Encerrando monitoramento...")
+        monitoring_task.cancel()
+        try:
+            await monitoring_task
+        except asyncio.CancelledError:
+            print("✅ Monitoramento encerrado com sucesso!")
+    print("👋 API encerrada!")
 
 
 app = FastAPI(
@@ -61,39 +68,25 @@ app.add_middleware(
 )
 
 
-# Rota de health check
+# Rota de health check simples - deve responder rapidamente
 @app.get("/")
 async def health_check():
-    """Endpoint de health check para verificar se a aplicação está funcionando."""
-    return {
-        "status": "healthy",
-        "message": "InfraWatch API está funcionando!",
-        "version": "2.0.1",
-        "timestamp": datetime.now().isoformat()
-    }
+    """Endpoint de health check básico."""
+    return {"status": "ok", "service": "infrawatch-api"}
 
 
 @app.get("/health")
 async def detailed_health_check():
     """Endpoint de health check detalhado."""
     try:
-        # Aqui você pode adicionar verificações mais específicas
         return {
             "status": "healthy",
-            "details": {
-                "api": "operational",
-                "database": "connected",  # Você pode verificar a conexão com o DB aqui
-                "monitoring": "active"
-            },
+            "message": "InfraWatch API está funcionando!",
             "version": "2.0.1",
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }
+        return {"status": "error", "message": str(e)}
 
 
 app.include_router(auth_router)

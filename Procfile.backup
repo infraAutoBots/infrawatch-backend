@@ -1,0 +1,5 @@
+# Procfile principal
+web: python -m uvicorn api.app:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 300
+
+# Procfile alternativo para debugging (renomeie para Procfile se necessário)
+# web: python -m uvicorn api.simple_app:app --host 0.0.0.0 --port $PORT
