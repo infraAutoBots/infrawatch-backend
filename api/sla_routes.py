@@ -397,7 +397,7 @@ async def get_incidents_summary(
         session.close()
 
 
-@sla_router.get("/performance/metrics")
+@sla_router.get("/performance-metrics")
 async def get_performance_metrics(
     endpoint_id: Optional[int] = Query(None, description="ID do endpoint específico"),
     days: int = Query(7, description="Número de dias para análise"),

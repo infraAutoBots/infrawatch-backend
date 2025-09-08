@@ -4,9 +4,6 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Adicionar o diretório api ao path para permitir imports locais
-sys.path.insert(0, os.path.dirname(__file__))
-
 from auth_routes import auth_router
 from monitor_routes import monitor_router
 from users_routes import users_router
