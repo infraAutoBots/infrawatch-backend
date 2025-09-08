@@ -3,12 +3,34 @@ from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, Da
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 from enum import Enum
+from dotenv import load_dotenv
 
+# Carregar variáveis de ambiente
+load_dotenv()
 
+# Configuração dinâmica do banco
+def get_database_url():
+    """Retorna a URL do banco de dados baseada nas variáveis de ambiente"""
+    # Priorizar PostgreSQL se configurado
+    postgres_url = os.getenv("DATABASE_URL")
+    if postgres_url and postgres_url.startswith("postgresql"):
+        return postgres_url
+    
+    # Fallback para SQLite
+    sqlite_url = os.getenv("SQLITE_DATABASE_URL")
+    if sqlite_url:
+        if sqlite_url.startswith("sqlite:///"):
+            return sqlite_url
+        else:
+            filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', sqlite_url.replace('sqlite:///', '')))
+            return f'sqlite:///{filename}'
+    
+    # Fallback padrão
+    filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database.db'))
+    return f'sqlite:///{filename}'
 
 # criar a conexao no banco
-filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database.db'))
-db = create_engine(f'sqlite:///{filename}')
+db = create_engine(get_database_url(), echo=False)
 
 
 # criar a base do banco de dados
