@@ -3574,3 +3574,28 @@ nalizeo meu nomitoramento nao esta a consegui resolver o falso negativo do dgg.g
 
 
 
+
+# Atualizar repositórios
+sudo apt update
+
+# Instalar PostgreSQL
+sudo apt install postgresql postgresql-contrib
+
+# Iniciar serviço
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Verificar status
+sudo systemctl status postgresql
+
+
+
+
+# Entrar como usuário postgres
+sudo -u postgres psql
+
+# No console PostgreSQL:
+CREATE USER infrawatch WITH PASSWORD 'sua_senha_aqui';
+CREATE DATABASE infrawatch_db OWNER infrawatch;
+GRANT ALL PRIVILEGES ON DATABASE infrawatch_db TO infrawatch;
+\q
