@@ -1,8 +1,3 @@
-"""
-Módulo para verificação e envio de alertas de performance.
-Monitora CPU, Memória, Disco e Rede.
-"""
-
 from typing import Optional, Tuple, List, Dict, Any
 from datetime import datetime
 import json
