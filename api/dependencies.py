@@ -8,6 +8,18 @@ from encryption import SECRET_KEY, ALGORITHM, oauth2_schema
 
 
 
+
+def init_session_monitor():
+    """Initialize a new database session for monitoring.
+
+    Returns:
+        _type_: _description_
+    """
+    Session = sessionmaker(bind=db)
+    return Session()
+
+
+
 def init_session() -> Generator[Session, None, None]:
     """
     Inicializa uma sessão do banco de dados e garante seu fechamento.
