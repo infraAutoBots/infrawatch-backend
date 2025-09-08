@@ -924,12 +924,13 @@ class OptimizedMonitor:
 
     async def check_single_host(self, host_status: HostStatus) -> HostStatus:
         """Verificação completa com controle de falhas consecutivas"""
-        ip = host_status.ip
 
         # Ping check
         snmp_data = None
+        ip = host_status.ip
         ping_results = await self.fast_ping_check([ip])
         is_alive, rtt = ping_results.get(ip, (False, 0.0))
+
 
         if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
             # Tenta SNMP com retry
@@ -943,13 +944,13 @@ class OptimizedMonitor:
             if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
                 snmp_data = await self.fast_snmp_check_with_retry(ip)
 
-        print(f"{ip}: {is_alive}")
 
         # CORREÇÃO: Atualiza contadores de ping baseado APENAS no resultado do ping inicial
         if is_alive:
             self.hosts_status[ip].consecutive_ping_failures = 0
         elif self.hosts_status[ip].consecutive_ping_failures < self.max_consecutive_ping_failures + 1:
             self.hosts_status[ip].consecutive_ping_failures += 1
+
 
         # Atualiza contadores de SNMP separadamente
         if is_alive and check_ip_for_snmp(self.hosts_status[ip]):
@@ -978,10 +979,12 @@ class OptimizedMonitor:
             self.hosts_status[ip].consecutive_snmp_failures += 1
             self.global_failure_count += 1
 
+
         self.hosts_status[ip].is_alive = is_alive
         self.hosts_status[ip].snmp_data = snmp_data
         self.hosts_status[ip].last_updated = datetime.now()
         self.hosts_status[ip].ping_rtt = rtt
+
 
         # Verifica se precisa renovar engines globalmente
         if self.global_failure_count >= self.engine_refresh_threshold:
@@ -990,6 +993,7 @@ class OptimizedMonitor:
             await snmp_pool.refresh_all_engines()
             self.hosts_status[ip].consecutive_snmp_failures = 0
             self.global_failure_count = 0
+
 
         return self.hosts_status[ip]
 
