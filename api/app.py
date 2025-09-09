@@ -1,19 +1,44 @@
 import os
 import uvicorn
 import asyncio
+import sys
 from datetime import datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .auth_routes import auth_router
-from .monitor_routes import monitor_router
-from .users_routes import users_router
-from .alert_routes import alert_router
-from .config_routes import config_router
-from .sla_routes import sla_router
-
-from .monitor import OptimizedMonitor
+# Detecta se está sendo executado diretamente ou como módulo
+if __name__ == "__main__":
+    # Quando executado diretamente (python api/app.py)
+    # Adiciona o diretório pai ao PYTHONPATH
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from api.auth_routes import auth_router
+    from api.monitor_routes import monitor_router
+    from api.users_routes import users_router
+    from api.alert_routes import alert_router
+    from api.config_routes import config_router
+    from api.sla_routes import sla_router
+    from api.monitor import OptimizedMonitor
+else:
+    # Quando importado como módulo (uvicorn api.app:app)
+    try:
+        # Tenta imports absolutos primeiro
+        from api.auth_routes import auth_router
+        from api.monitor_routes import monitor_router
+        from api.users_routes import users_router
+        from api.alert_routes import alert_router
+        from api.config_routes import config_router
+        from api.sla_routes import sla_router
+        from api.monitor import OptimizedMonitor
+    except ImportError:
+        # Fallback para imports relativos se absolutos falharem
+        from .auth_routes import auth_router
+        from .monitor_routes import monitor_router
+        from .users_routes import users_router
+        from .alert_routes import alert_router
+        from .config_routes import config_router
+        from .sla_routes import sla_router
+        from .monitor import OptimizedMonitor
 
 
 
