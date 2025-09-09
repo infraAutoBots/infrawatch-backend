@@ -23,6 +23,22 @@ async def lifespan(app: FastAPI):
     # Código executado ANTES da API iniciar
     print("⚡ Iniciando InfraWatch API...")
     
+    # Inicializar banco de dados
+    try:
+        print("🗄️ Inicializando banco de dados...")
+        from .models import Base, db, get_database_url
+        
+        db_url = get_database_url()
+        print(f"📊 Conectando ao banco: {db_url[:50]}...")
+        
+        # Criar todas as tabelas
+        Base.metadata.create_all(bind=db)
+        print("✅ Tabelas do banco de dados criadas/verificadas com sucesso!")
+        
+    except Exception as e:
+        print(f"⚠️ Erro ao inicializar banco de dados: {e}")
+        print("📡 API pode funcionar com funcionalidade limitada")
+    
     monitoring_task = None
     try:
         print("🚀 Tentando inicializar monitoramento...")
@@ -87,6 +103,37 @@ async def detailed_health_check():
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.get("/db-status")
+async def database_status():
+    """Verifica o status da conexão com o banco de dados."""
+    try:
+        from .models import get_database_url, db
+        import os
+        
+        db_url = get_database_url()
+        
+        # Testar conexão
+        with db.connect() as conn:
+            result = conn.execute("SELECT 1").fetchone()
+            
+        return {
+            "status": "connected",
+            "database_type": "postgresql" if "postgres" in db_url else "sqlite",
+            "database_url": db_url[:50] + "..." if len(db_url) > 50 else db_url,
+            "connection_test": "successful",
+            "environment": {
+                "RAILWAY_ENVIRONMENT": os.getenv("RAILWAY_ENVIRONMENT"),
+                "DATABASE_URL_SET": bool(os.getenv("DATABASE_URL"))
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "database_url": "unknown"
+        }
 
 
 app.include_router(auth_router)

@@ -11,22 +11,26 @@ load_dotenv()
 # Configuração dinâmica do banco
 def get_database_url():
     """Retorna a URL do banco de dados baseada nas variáveis de ambiente"""
-    # Priorizar PostgreSQL se configurado
+    
+    # Priorizar PostgreSQL se configurado (Railway automatically sets this)
     postgres_url = os.getenv("DATABASE_URL")
-    if postgres_url and postgres_url.startswith("postgresql"):
+    if postgres_url and ("postgresql" in postgres_url or "postgres" in postgres_url):
+        print(f"🐘 Usando PostgreSQL: {postgres_url[:50]}...")
         return postgres_url
     
-    # Fallback para SQLite
+    # Fallback para SQLite baseado em variável específica
     sqlite_url = os.getenv("SQLITE_DATABASE_URL")
     if sqlite_url:
         if sqlite_url.startswith("sqlite:///"):
+            print(f"📄 Usando SQLite (env): {sqlite_url}")
             return sqlite_url
         else:
             filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', sqlite_url.replace('sqlite:///', '')))
             return f'sqlite:///{filename}'
     
-    # Fallback padrão
+    # Fallback padrão para SQLite
     filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database.db'))
+    print(f"📄 Usando SQLite padrão: {filename}")
     return f'sqlite:///{filename}'
 
 # criar a conexao no banco
