@@ -4,10 +4,10 @@ from jose import jwt
 from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional
-from .models import Users
-from .dependencies import init_session, verify_token
-from .encryption import SECRET_KEY, bcrypt_context, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from .schemas import LoginSchemas
+from api.models import Users
+from api.dependencies import init_session, verify_token
+from api.encryption import SECRET_KEY, bcrypt_context, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from api.schemas import LoginSchemas
 
 
 

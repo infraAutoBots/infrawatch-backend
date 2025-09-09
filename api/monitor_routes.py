@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from .dependencies import init_session, verify_token
+from api.dependencies import init_session, verify_token
 from sqlalchemy.orm import Session
-from .models import Users, EndPoints, EndPointsData, EndPointOIDs
-from .schemas import EndPointsDataSchemas, AddEndPointRequest
-from .utils_api import valid_end_point
+from api.models import Users, EndPoints, EndPointsData, EndPointOIDs
+from api.schemas import EndPointsDataSchemas, AddEndPointRequest
+from api.utils_api import valid_end_point
 from typing import Dict, Any, Optional
 
 

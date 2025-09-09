@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from .dependencies import init_session, verify_token
+from api.dependencies import init_session, verify_token
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_, desc, func
-from .models import Users, Alerts, AlertLogs
-from .schemas import (
+from api.models import Users, Alerts, AlertLogs
+from api.schemas import (
     AlertCreateSchema, AlertUpdateSchema, AlertResponseSchema,
     AlertListResponseSchema, AlertFiltersSchema, PaginationSchema,
     AlertStatsSchema, AlertActionSchema, AlertWithLogsSchema,

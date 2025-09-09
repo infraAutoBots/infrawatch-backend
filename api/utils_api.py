@@ -1,6 +1,6 @@
 import re
 from ipaddress import ip_address
-from .schemas import AddEndPointRequest
+from api.schemas import AddEndPointRequest
 from fastapi import HTTPException
 
 
