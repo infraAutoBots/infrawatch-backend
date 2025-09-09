@@ -5,18 +5,61 @@ from sqlalchemy.sql import func
 from enum import Enum
 from dotenv import load_dotenv
 
-# Carregar variáveis de ambiente
-load_dotenv()
+# Detectar ambiente e carregar configurações apropriadas
+def load_environment_config():
+    """Carrega as configurações de ambiente apropriadas"""
+    
+    # Detectar se estamos no Railway
+    is_railway = (
+        os.getenv("RAILWAY_ENVIRONMENT") is not None or 
+        os.getenv("RAILWAY_PROJECT_ID") is not None or
+        os.getenv("PORT") is not None
+    )
+    
+    if is_railway:
+        print("🚂 Ambiente Railway detectado - carregando .env")
+        load_dotenv()  # Carrega .env padrão (Railway)
+    else:
+        print("🏠 Ambiente local detectado - carregando .env.local")
+        # Tenta carregar .env.local primeiro, depois .env como fallback
+        if os.path.exists('.env.local'):
+            load_dotenv('.env.local')
+            print("✅ Configurações locais carregadas de .env.local")
+        else:
+            load_dotenv()
+            print("⚠️ .env.local não encontrado, usando .env padrão")
+
+# Carregar configurações de ambiente
+load_environment_config()
 
 # Configuração dinâmica do banco
 def get_database_url():
     """Retorna a URL do banco de dados baseada nas variáveis de ambiente"""
     
-    # Priorizar PostgreSQL se configurado (Railway automatically sets this)
+    # Detectar se estamos no Railway (verifica várias variáveis específicas do Railway)
+    is_railway = (
+        os.getenv("RAILWAY_ENVIRONMENT") is not None or 
+        os.getenv("RAILWAY_PROJECT_ID") is not None or
+        os.getenv("PORT") is not None  # Railway sempre define PORT
+    )
+    
+    # Priorizar PostgreSQL se configurado
     postgres_url = os.getenv("DATABASE_URL")
     if postgres_url and ("postgresql" in postgres_url or "postgres" in postgres_url):
-        print(f"🐘 Usando PostgreSQL: {postgres_url[:50]}...")
-        return postgres_url
+        if is_railway:
+            print(f"🚂 Rodando no Railway - PostgreSQL: {postgres_url[:50]}...")
+            return postgres_url
+        else:
+            # Local: verificar se é conexão Railway (postgres.railway.internal)
+            if "railway.internal" in postgres_url:
+                print("🏠 Ambiente local detectado, mas DATABASE_URL aponta para Railway")
+                print("� Usando SQLite local como fallback...")
+                # Fallback para SQLite local
+                filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database.db'))
+                return f'sqlite:///{filename}'
+            else:
+                print(f"🏠 Local - PostgreSQL: {postgres_url[:50]}...")
+                return postgres_url
     
     # Fallback para SQLite baseado em variável específica
     sqlite_url = os.getenv("SQLITE_DATABASE_URL")
