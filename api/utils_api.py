@@ -71,26 +71,33 @@ def valid_end_point(end_point: AddEndPointRequest) -> bool:
     if end_point.interval <= 0:
         raise HTTPException(status_code=400, detail="Intervalo inválido")
 
+    # ping snmp 1  and ping snmp 2
+    if (end_point.version == "1" or end_point.version == "2c"):
+        if end_point.community is None or end_point.community.strip() == "":
+            raise HTTPException(status_code=400, detail="Comunidade inválida")
+        if end_point.port is None or end_point.port <= 0:
+            raise HTTPException(status_code=400, detail="Porta inválida")
+        if not check_oids(end_point):
+            raise HTTPException(status_code=400, detail="OIDs inválidos")
+        return True
+
+    # ping snmp 3
+    if end_point.version == "3":
+        if end_point.port is None or end_point.port <= 0:
+            raise HTTPException(status_code=400, detail="Porta inválida")
+        if end_point.user is None or end_point.user.strip() == "":
+            raise HTTPException(status_code=400, detail="Usuário inválido")
+        if not check_oids(end_point):
+            raise HTTPException(status_code=400, detail="OIDs inválidos")
+        return True
+
     # so ping
     if (end_point.ip and end_point.interval and not end_point.version and
         not end_point.community and not end_point.port and not end_point.user and
         not end_point.authKey and not end_point.privKey and not check_oids(end_point)):
         return True
-
-    # ping snmp 1
-    if (end_point.ip and end_point.interval and end_point.version == "1" and
-        end_point.community and end_point.port and check_oids(end_point)):
-        return True
-
-    # ping snmp 2
-    if (end_point.ip and end_point.interval and end_point.version == "2c" and
-        end_point.community and end_point.port and check_oids(end_point)):
-        return True
-
-    # ping snmp 3
-    if (end_point.ip and end_point.interval and end_point.version == "3" and
-        not end_point.community and end_point.port and check_oids(end_point)):
-        return True
+    
+    if check_oids(end_point):
+        raise HTTPException(status_code=400, detail="OIDs passados sem SNMP")
 
     raise HTTPException(status_code=400, detail="configuracao inválido")
-
