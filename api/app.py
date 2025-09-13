@@ -18,7 +18,6 @@ if __name__ == "__main__":
     from api.alert_routes import alert_router
     from api.config_routes import config_router
     from api.sla_routes import sla_router
-    from api.monitor import OptimizedMonitor
 else:
     # Quando importado como módulo (uvicorn api.app:app)
     try:
@@ -29,7 +28,6 @@ else:
         from api.alert_routes import alert_router
         from api.config_routes import config_router
         from api.sla_routes import sla_router
-        from api.monitor import OptimizedMonitor
     except ImportError:
         # Fallback para imports relativos se absolutos falharem
         from .auth_routes import auth_router
@@ -38,64 +36,12 @@ else:
         from .alert_routes import alert_router
         from .config_routes import config_router
         from .sla_routes import sla_router
-        from .monitor import OptimizedMonitor
-
-
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Código executado ANTES da API iniciar
-    print("⚡ Iniciando InfraWatch API...")
-    
-    # Inicializar banco de dados
-    try:
-        print("🗄️ Inicializando banco de dados...")
-        from .models import Base, db, get_database_url
-        
-        db_url = get_database_url()
-        print(f"📊 Conectando ao banco: {db_url[:50]}...")
-        
-        # Criar todas as tabelas
-        Base.metadata.create_all(bind=db)
-        print("✅ Tabelas do banco de dados criadas/verificadas com sucesso!")
-        
-    except Exception as e:
-        print(f"⚠️ Erro ao inicializar banco de dados: {e}")
-        print("📡 API pode funcionar com funcionalidade limitada")
-    
-    monitoring_task = None
-    try:
-        print("🚀 Tentando inicializar monitoramento...")
-        # Inicializar o monitor de forma segura
-        monitor = OptimizedMonitor(logger=False)
-        
-        # Criar uma task em background para o monitoramento
-        monitoring_task = asyncio.create_task(monitor.run_monitoring(interval=90.0))
-        print("✅ Monitoramento iniciado em background!")
-        
-    except Exception as e:
-        print(f"⚠️ Não foi possível inicializar o monitoramento: {e}")
-        print("📡 API funcionando sem monitoramento automático")
-    
-    yield  # A API roda aqui
-    
-    # Código executado APÓS a API encerrar
-    if monitoring_task:
-        print("🔄 Encerrando monitoramento...")
-        monitoring_task.cancel()
-        try:
-            await monitoring_task
-        except asyncio.CancelledError:
-            print("✅ Monitoramento encerrado com sucesso!")
-    print("👋 API encerrada!")
 
 
 app = FastAPI(
     title="API de Monitoramento SNMP",
     description="API que gerencia dispositivos SNMP e coleta métricas em tempo real.",
-    version="2.0.1",
-    lifespan=lifespan
+    version="2.0.1"
 )
 
 
