@@ -2,6 +2,21 @@
 
 Este projeto é o backend do **InfraWatch**, uma solução desenvolvida para monitoramento de infraestrutura, coleta de métricas e disponibilização de uma API RESTful para integração com outros sistemas. O backend é construído em Python e utiliza pacotes modernos para facilitar a manutenção, extensibilidade e confiabilidade do sistema.
 
+## 🚨 PROBLEMAS COM DEPLOY NO RAILWAY?
+
+Se você está enfrentando erro de autenticação no PostgreSQL:
+```
+psycopg2.OperationalError: password authentication failed for user "postgres"
+```
+
+**📖 Consulte os guias de solução:**
+- 🎯 **[RAILWAY_SETUP_GUIDE.md](./RAILWAY_SETUP_GUIDE.md)** - Guia completo passo a passo
+- ⚡ **[FIX_DATABASE_AUTH.md](./FIX_DATABASE_AUTH.md)** - Solução rápida em 3 passos
+- 📊 **[DIAGNOSTIC_SUMMARY.md](./DIAGNOSTIC_SUMMARY.md)** - Diagnóstico completo
+- 🔧 **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Comandos úteis
+
+---
+
 ## Sobre o Projeto
 
 O **InfraWatch-backend** tem como objetivos principais:
